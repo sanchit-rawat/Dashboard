@@ -8,6 +8,8 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
+          <link rel="manifest" href="pwa-manifest.json">
+
     <title>Aesthetic Dashboard</title>
 
     <!-- CSS -->
@@ -23,6 +25,7 @@
 
     <!-- Ambient Glow -->
     <div class="ambient-bg"></div>
+    <div class="cursor-glow"></div>
 
     <!-- MAIN DASHBOARD -->
     <div class="dashboard-container">
@@ -55,16 +58,20 @@
 
             </div>
 
-            <!-- SEARCH BAR -->
-            <div class="search-container">
+  <!-- SEARCH BAR -->
 
-                <i class="fas fa-search search-icon"></i>
+<div class="search-container">
 
-                <input type="text"
-                       id="google-search"
-                       placeholder="Search the web...">
+    <i class="fas fa-search search-icon"></i>
 
-            </div>
+    <input
+        type="search"
+        id="google-search"
+        placeholder="Search the web..."
+        autocomplete="off"
+        enterkeyhint="search">
+
+</div>
 
         </main>
 
@@ -116,7 +123,7 @@
 
                 <div class="todo-input-group">
 
-                    <input type="text"
+                    <input type="search"
                            id="todo-input"
                            placeholder="Add a task...">
 
