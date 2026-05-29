@@ -5,7 +5,6 @@
 
 // --- 1. CONFIGURATION ---
 const WEATHER_API_KEY = 'b0677d9c940a9b4a0ff25a852a0c18b1';
-const DEFAULT_CITY = 'Delhi'; // Change this to your preferred city
 
 // --- 2. DOM ELEMENTS ---
 const clockEl = document.getElementById('clock');
@@ -119,9 +118,6 @@ async function fetchWeather() {
         document.querySelector('.desc').textContent = "Weather offline";
     }
 }
-fetchWeather();
-// Refresh weather every 10 minutes
-setInterval(fetchWeather, 600000);
 
 // --- 9. CALENDAR WIDGET ---
 (function() {
@@ -254,3 +250,86 @@ if ("serviceWorker" in navigator) {
 
     });
 }
+
+// --- AUTO LOCATION WEATHER ---
+
+async function fetchWeatherByCoords(lat, lon) {
+
+    try {
+
+        const response = await fetch(
+
+            `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${WEATHER_API_KEY}`
+
+        );
+
+        if (!response.ok) {
+
+            throw new Error("Weather unavailable");
+
+        }
+
+        const data = await response.json();
+
+        document.querySelector(".temp").textContent =
+
+            `${Math.round(data.main.temp)}°C`;
+
+        document.querySelector(".desc").textContent =
+
+            `${data.name} • ${data.weather[0].description}`;
+
+    }
+
+    catch (err) {
+
+        console.error(err);
+
+        document.querySelector(".desc").textContent =
+
+            "Weather unavailable";
+
+    }
+}
+
+// GET USER LOCATION
+
+function getWeather() {
+
+    if (!navigator.geolocation) {
+
+        document.querySelector(".desc").textContent =
+
+            "Location not supported";
+
+        return;
+
+    }
+
+    navigator.geolocation.getCurrentPosition(
+
+        (position) => {
+
+            const lat = position.coords.latitude;
+
+            const lon = position.coords.longitude;
+
+            fetchWeatherByCoords(lat, lon);
+
+        },
+
+        () => {
+
+            document.querySelector(".desc").textContent =
+
+                "Location permission denied";
+
+        }
+    );
+}
+
+getWeather();
+
+// Refresh every 10 mins
+
+setInterval(getWeather, 600000);
