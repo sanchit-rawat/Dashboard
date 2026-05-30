@@ -102,23 +102,6 @@ addTodoBtn.addEventListener('click', addTask);
 todoInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addTask(); });
 renderTasks(); // Initial load
 
-// --- 8. WEATHER API ---
-async function fetchWeather() {
-    try {
-        const response = await fetch(
-            `https://api.openweathermap.org/data/2.5/weather?q=${DEFAULT_CITY}&units=metric&appid=${WEATHER_API_KEY}`
-        );
-        if (!response.ok) throw new Error('Weather data unavailable');
-        
-        const data = await response.json();
-        document.querySelector('.temp').textContent = `${Math.round(data.main.temp)}°C`;
-        document.querySelector('.desc').textContent = data.weather[0].description;
-    } catch (err) {
-        console.error('Weather Error:', err);
-        document.querySelector('.desc').textContent = "Weather offline";
-    }
-}
-
 // --- 9. CALENDAR WIDGET ---
 (function() {
     const calendarEl = document.getElementById('calendar');
