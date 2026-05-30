@@ -1,48 +1,42 @@
 /**
  * AESTHETIC DASHBOARD - CORE LOGIC
- * Includes: Clock, Google Search, Theme Switching, Notes, and Persistent To-Do List.
+ * Includes: Clock, Google Search, Theme Switching, Notes, Persistent To-Do List, and Weather by City.
  */
 
 // --- 1. CONFIGURATION ---
 const WEATHER_API_KEY = 'b0677d9c940a9b4a0ff25a852a0c18b1';
-const DEFAULT_LAT = 28.6139;
-const DEFAULT_LON = 77.2090;
 
 // --- 2. DOM ELEMENTS ---
-const clockEl = document.getElementById('clock');
-const dateEl = document.getElementById('date');
-const searchInput = document.getElementById('google-search');
-const themeBtn = document.getElementById('theme-toggle');
-const notesArea = document.getElementById('quick-notes');
-const todoInput = document.getElementById('todo-input');
-const todoList = document.getElementById('todo-list');
-const addTodoBtn = document.getElementById('add-todo');
+const clockEl      = document.getElementById('clock');
+const dateEl       = document.getElementById('date');
+const searchInput  = document.getElementById('google-search');
+const themeBtn     = document.getElementById('theme-toggle');
+const notesArea    = document.getElementById('quick-notes');
+const todoInput    = document.getElementById('todo-input');
+const todoList     = document.getElementById('todo-list');
+const addTodoBtn   = document.getElementById('add-todo');
 
 // --- 3. CLOCK & DATE ---
 function updateClock() {
     const now = new Date();
-    const timeString = now.toLocaleTimeString('en-US', {
-        hour12: false,
-        hour: '2-digit',
-        minute: '2-digit'
+    clockEl.textContent = now.toLocaleTimeString('en-US', {
+        hour12: false, hour: '2-digit', minute: '2-digit'
     });
-    clockEl.textContent = timeString;
-
-    const dateOptions = { weekday: 'long', month: 'long', day: 'numeric' };
-    dateEl.textContent = now.toLocaleDateString('en-US', dateOptions);
+    dateEl.textContent = now.toLocaleDateString('en-US', {
+        weekday: 'long', month: 'long', day: 'numeric'
+    });
 }
 setInterval(updateClock, 1000);
 updateClock();
 
 // --- 4. GOOGLE SEARCH ---
 searchInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && searchInput.value.trim() !== '') {
-        const query = encodeURIComponent(searchInput.value);
-        window.location.href = `https://www.google.com/search?q=${query}`;
+    if (e.key === 'Enter' && searchInput.value.trim()) {
+        window.location.href = `https://www.google.com/search?q=${encodeURIComponent(searchInput.value)}`;
     }
 });
 
-// --- 5. THEME TOGGLE (DARK/LIGHT) ---
+// --- 5. THEME TOGGLE ---
 const savedTheme = localStorage.getItem('theme') || 'dark';
 document.body.setAttribute('data-theme', savedTheme);
 updateThemeIcon(savedTheme);
@@ -55,8 +49,7 @@ themeBtn.addEventListener('click', () => {
 });
 
 function updateThemeIcon(theme) {
-    const icon = themeBtn.querySelector('i');
-    icon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+    themeBtn.querySelector('i').className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
 }
 
 // --- 6. NOTES (AUTO-SAVE) ---
@@ -65,7 +58,7 @@ notesArea.addEventListener('input', () => {
     localStorage.setItem('dashboard-notes', notesArea.value);
 });
 
-// --- 7. TO-DO LIST (WITH LOCAL STORAGE) ---
+// --- 7. TO-DO LIST ---
 let tasks = JSON.parse(localStorage.getItem('dashboard-tasks')) || [];
 
 function renderTasks() {
@@ -101,43 +94,82 @@ addTodoBtn.addEventListener('click', addTask);
 todoInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addTask(); });
 renderTasks();
 
-// --- 8. WEATHER (HARDCODED DELHI COORDS - NO GEOLOCATION NEEDED) ---
-async function fetchWeatherByCoords(lat, lon) {
+// --- 8. WEATHER WITH MANUAL CITY SEARCH ---
+
+// Inject city input UI into the weather widget
+function buildWeatherUI() {
+    const weatherInfo = document.getElementById('weather-info');
+    if (!weatherInfo) return;
+
+    weatherInfo.innerHTML = `
+        <p class="temp">--°C</p>
+        <p class="desc">Loading...</p>
+        <div class="weather-input-group">
+            <input
+                type="text"
+                id="city-input"
+                placeholder="Enter city..."
+                value="${localStorage.getItem('dashboard-city') || 'Delhi'}"
+            />
+            <button id="city-search-btn"><i class="fas fa-search"></i></button>
+        </div>
+    `;
+
+    document.getElementById('city-search-btn').addEventListener('click', () => {
+        const city = document.getElementById('city-input').value.trim();
+        if (city) fetchWeatherByCity(city);
+    });
+
+    document.getElementById('city-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const city = document.getElementById('city-input').value.trim();
+            if (city) fetchWeatherByCity(city);
+        }
+    });
+}
+
+// Fetch weather by city name
+async function fetchWeatherByCity(city) {
+    const tempEl = document.querySelector('.temp');
+    const descEl = document.querySelector('.desc');
+    descEl.textContent = 'Searching...';
+
     try {
         const response = await fetch(
-            `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${WEATHER_API_KEY}`
+            `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&units=metric&appid=${WEATHER_API_KEY}`
         );
-        if (!response.ok) throw new Error('Weather unavailable');
+
+        if (!response.ok) {
+            if (response.status === 404) throw new Error('City not found');
+            throw new Error('Weather unavailable');
+        }
 
         const data = await response.json();
-        document.querySelector('.temp').textContent = `${Math.round(data.main.temp)}°C`;
-        document.querySelector('.desc').textContent = `${data.name} • ${data.weather[0].description}`;
+        tempEl.textContent = `${Math.round(data.main.temp)}°C`;
+        descEl.textContent = `${data.name}, ${data.sys.country} • ${data.weather[0].description}`;
+
+        // Save city so it reloads on next visit
+        localStorage.setItem('dashboard-city', city);
+
     } catch (err) {
         console.error(err);
-        document.querySelector('.desc').textContent = 'Weather unavailable';
+        tempEl.textContent = '--°C';
+        descEl.textContent = err.message === 'City not found' ? '❌ City not found' : 'Weather unavailable';
     }
 }
 
-function getWeather() {
-    // Try geolocation first, fall back to Delhi coords
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                fetchWeatherByCoords(position.coords.latitude, position.coords.longitude);
-            },
-            () => {
-                // Permission denied or unavailable — use Delhi as default
-                fetchWeatherByCoords(DEFAULT_LAT, DEFAULT_LON);
-            },
-            { timeout: 5000 }
-        );
-    } else {
-        fetchWeatherByCoords(DEFAULT_LAT, DEFAULT_LON);
-    }
+// On load: use saved city or default to Delhi
+function initWeather() {
+    buildWeatherUI();
+    const savedCity = localStorage.getItem('dashboard-city') || 'Delhi';
+    fetchWeatherByCity(savedCity);
 }
 
-getWeather();
-setInterval(getWeather, 600000);
+initWeather();
+setInterval(() => {
+    const city = localStorage.getItem('dashboard-city') || 'Delhi';
+    fetchWeatherByCity(city);
+}, 600000);
 
 // --- 9. CALENDAR WIDGET ---
 (function () {
@@ -147,7 +179,6 @@ setInterval(getWeather, 600000);
     let current = new Date();
     const saved = localStorage.getItem('dashboard-selected-date');
     let selected = saved ? new Date(saved) : null;
-
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     function isSameDate(a, b) {
@@ -171,13 +202,8 @@ setInterval(getWeather, 600000);
             </div>
             <div class="calendar-grid">
         `;
-
-        dayNames.forEach(name => { html += `<div class="day-name">${name}</div>`; });
-
-        for (let i = 0; i < firstDayIndex; i++) {
-            html += `<div class="day empty"></div>`;
-        }
-
+        dayNames.forEach(n => { html += `<div class="day-name">${n}</div>`; });
+        for (let i = 0; i < firstDayIndex; i++) html += `<div class="day empty"></div>`;
         for (let d = 1; d <= daysInMonth; d++) {
             const cellDate = new Date(year, month, d);
             let classes = 'day';
@@ -185,7 +211,6 @@ setInterval(getWeather, 600000);
             if (selected && isSameDate(cellDate, selected)) classes += ' selected';
             html += `<div class="${classes}" data-day="${d}">${d}</div>`;
         }
-
         html += `</div>`;
         calendarEl.innerHTML = html;
 
@@ -193,17 +218,14 @@ setInterval(getWeather, 600000);
             current = new Date(current.getFullYear(), current.getMonth() - 1, 1);
             renderCalendar(current);
         });
-
         calendarEl.querySelector('#cal-next').addEventListener('click', () => {
             current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
             renderCalendar(current);
         });
-
         calendarEl.querySelectorAll('.day').forEach(el => {
             if (el.classList.contains('empty')) return;
             el.addEventListener('click', () => {
-                const day = parseInt(el.dataset.day, 10);
-                selected = new Date(current.getFullYear(), current.getMonth(), day);
+                selected = new Date(current.getFullYear(), current.getMonth(), parseInt(el.dataset.day, 10));
                 localStorage.setItem('dashboard-selected-date', selected.toISOString());
                 renderCalendar(current);
             });
@@ -214,29 +236,16 @@ setInterval(getWeather, 600000);
 
     const floatingPanel = document.getElementById('floating-calendar-panel');
     if (!floatingPanel) return;
-
     let panelHovered = false;
 
-    function showFloatingCalendar() {
-        floatingPanel.classList.add('visible');
-    }
-
-    function hideFloatingCalendar() {
-        if (!panelHovered) floatingPanel.classList.remove('visible');
-    }
-
     window.addEventListener('mousemove', (e) => {
-        if (e.clientX <= 50) {
-            showFloatingCalendar();
-        } else if (e.clientX > 240 && !panelHovered) {
-            hideFloatingCalendar();
-        }
+        if (e.clientX <= 50) floatingPanel.classList.add('visible');
+        else if (e.clientX > 240 && !panelHovered) floatingPanel.classList.remove('visible');
     });
-
     floatingPanel.addEventListener('mouseenter', () => { panelHovered = true; });
     floatingPanel.addEventListener('mouseleave', () => {
         panelHovered = false;
-        hideFloatingCalendar();
+        floatingPanel.classList.remove('visible');
     });
 })();
 
@@ -245,6 +254,6 @@ if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./service-worker.js')
             .then(() => console.log('Service Worker Registered'))
-            .catch((err) => console.warn('Service Worker failed:', err));
+            .catch(err => console.warn('Service Worker failed:', err));
     });
 }
