@@ -5,6 +5,8 @@
 
 // --- 1. CONFIGURATION ---
 const WEATHER_API_KEY = 'b0677d9c940a9b4a0ff25a852a0c18b1';
+const DEFAULT_LAT = 28.6139;
+const DEFAULT_LON = 77.2090;
 
 // --- 2. DOM ELEMENTS ---
 const clockEl = document.getElementById('clock');
@@ -19,16 +21,13 @@ const addTodoBtn = document.getElementById('add-todo');
 // --- 3. CLOCK & DATE ---
 function updateClock() {
     const now = new Date();
-    
-    // Time format: 00:00:00 (Optional: remove :ss for a cleaner look)
-    const timeString = now.toLocaleTimeString('en-US', { 
-        hour12: false, 
-        hour: '2-digit', 
-        minute: '2-digit' 
+    const timeString = now.toLocaleTimeString('en-US', {
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit'
     });
     clockEl.textContent = timeString;
 
-    // Date format: Sunday, May 24
     const dateOptions = { weekday: 'long', month: 'long', day: 'numeric' };
     dateEl.textContent = now.toLocaleDateString('en-US', dateOptions);
 }
@@ -100,10 +99,48 @@ window.deleteTask = (index) => {
 
 addTodoBtn.addEventListener('click', addTask);
 todoInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addTask(); });
-renderTasks(); // Initial load
+renderTasks();
+
+// --- 8. WEATHER (HARDCODED DELHI COORDS - NO GEOLOCATION NEEDED) ---
+async function fetchWeatherByCoords(lat, lon) {
+    try {
+        const response = await fetch(
+            `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${WEATHER_API_KEY}`
+        );
+        if (!response.ok) throw new Error('Weather unavailable');
+
+        const data = await response.json();
+        document.querySelector('.temp').textContent = `${Math.round(data.main.temp)}°C`;
+        document.querySelector('.desc').textContent = `${data.name} • ${data.weather[0].description}`;
+    } catch (err) {
+        console.error(err);
+        document.querySelector('.desc').textContent = 'Weather unavailable';
+    }
+}
+
+function getWeather() {
+    // Try geolocation first, fall back to Delhi coords
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                fetchWeatherByCoords(position.coords.latitude, position.coords.longitude);
+            },
+            () => {
+                // Permission denied or unavailable — use Delhi as default
+                fetchWeatherByCoords(DEFAULT_LAT, DEFAULT_LON);
+            },
+            { timeout: 5000 }
+        );
+    } else {
+        fetchWeatherByCoords(DEFAULT_LAT, DEFAULT_LON);
+    }
+}
+
+getWeather();
+setInterval(getWeather, 600000);
 
 // --- 9. CALENDAR WIDGET ---
-(function() {
+(function () {
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl) return;
 
@@ -111,10 +148,12 @@ renderTasks(); // Initial load
     const saved = localStorage.getItem('dashboard-selected-date');
     let selected = saved ? new Date(saved) : null;
 
-    const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     function isSameDate(a, b) {
-        return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+        return a.getFullYear() === b.getFullYear() &&
+               a.getMonth() === b.getMonth() &&
+               a.getDate() === b.getDate();
     }
 
     function renderCalendar(date) {
@@ -133,15 +172,12 @@ renderTasks(); // Initial load
             <div class="calendar-grid">
         `;
 
-        // Day names
         dayNames.forEach(name => { html += `<div class="day-name">${name}</div>`; });
 
-        // Empty slots before first day
         for (let i = 0; i < firstDayIndex; i++) {
             html += `<div class="day empty"></div>`;
         }
 
-        // Days
         for (let d = 1; d <= daysInMonth; d++) {
             const cellDate = new Date(year, month, d);
             let classes = 'day';
@@ -153,16 +189,12 @@ renderTasks(); // Initial load
         html += `</div>`;
         calendarEl.innerHTML = html;
 
-        // Wire events
-        const prev = calendarEl.querySelector('#cal-prev');
-        const next = calendarEl.querySelector('#cal-next');
-
-        prev.addEventListener('click', () => {
+        calendarEl.querySelector('#cal-prev').addEventListener('click', () => {
             current = new Date(current.getFullYear(), current.getMonth() - 1, 1);
             renderCalendar(current);
         });
 
-        next.addEventListener('click', () => {
+        calendarEl.querySelector('#cal-next').addEventListener('click', () => {
             current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
             renderCalendar(current);
         });
@@ -181,138 +213,38 @@ renderTasks(); // Initial load
     renderCalendar(current);
 
     const floatingPanel = document.getElementById('floating-calendar-panel');
+    if (!floatingPanel) return;
+
     let panelHovered = false;
 
     function showFloatingCalendar() {
-        if (!floatingPanel.classList.contains('visible')) {
-            floatingPanel.classList.add('visible');
-        }
+        floatingPanel.classList.add('visible');
     }
 
     function hideFloatingCalendar() {
-        if (!panelHovered) {
-            floatingPanel.classList.remove('visible');
-        }
+        if (!panelHovered) floatingPanel.classList.remove('visible');
     }
 
     window.addEventListener('mousemove', (e) => {
         if (e.clientX <= 50) {
             showFloatingCalendar();
-            return;
-        }
-
-        if (e.clientX > 240 && !panelHovered) {
+        } else if (e.clientX > 240 && !panelHovered) {
             hideFloatingCalendar();
         }
     });
 
-    floatingPanel.addEventListener('mouseenter', () => {
-        panelHovered = true;
-    });
-
+    floatingPanel.addEventListener('mouseenter', () => { panelHovered = true; });
     floatingPanel.addEventListener('mouseleave', () => {
         panelHovered = false;
         hideFloatingCalendar();
     });
-
 })();
 
-if ("serviceWorker" in navigator) {
-
-    window.addEventListener("load", () => {
-
-        navigator.serviceWorker.register("./service-worker.js")
-
-            .then(() => {
-
-                console.log(
-                    "Service Worker Registered"
-                );
-
-            });
-
+// --- 10. SERVICE WORKER ---
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+            .then(() => console.log('Service Worker Registered'))
+            .catch((err) => console.warn('Service Worker failed:', err));
     });
 }
-
-// --- AUTO LOCATION WEATHER ---
-
-async function fetchWeatherByCoords(lat, lon) {
-
-    try {
-
-        const response = await fetch(
-
-            `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${WEATHER_API_KEY}`
-
-        );
-
-        if (!response.ok) {
-
-            throw new Error("Weather unavailable");
-
-        }
-
-        const data = await response.json();
-
-        document.querySelector(".temp").textContent =
-
-            `${Math.round(data.main.temp)}°C`;
-
-        document.querySelector(".desc").textContent =
-
-            `${data.name} • ${data.weather[0].description}`;
-
-    }
-
-    catch (err) {
-
-        console.error(err);
-
-        document.querySelector(".desc").textContent =
-
-            "Weather unavailable";
-
-    }
-}
-
-// GET USER LOCATION
-
-function getWeather() {
-
-    if (!navigator.geolocation) {
-
-        document.querySelector(".desc").textContent =
-
-            "Location not supported";
-
-        return;
-
-    }
-
-    navigator.geolocation.getCurrentPosition(
-
-        (position) => {
-
-            const lat = position.coords.latitude;
-
-            const lon = position.coords.longitude;
-
-            fetchWeatherByCoords(lat, lon);
-
-        },
-
-        () => {
-
-            document.querySelector(".desc").textContent =
-
-                "Location permission denied";
-
-        }
-    );
-}
-
-getWeather();
-
-// Refresh every 10 mins
-
-setInterval(getWeather, 600000);
