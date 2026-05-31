@@ -2,23 +2,21 @@
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
-
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
-
-          <link rel="manifest" href="pwa-manifest.json">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="pwa-manifest.json">
     <title>Aesthetic Dashboard</title>
 
     <!-- CSS -->
     <link rel="stylesheet" href="style.css">
 
-    <!-- Icons -->
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=Raleway:wght@200;300;400;500;600&family=Space+Grotesk:wght@300;400;500;600&family=DM+Sans:wght@200;300;400;500;600&family=Outfit:wght@200;300;400;500;600&display=swap" rel="stylesheet">
 
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
@@ -27,19 +25,26 @@
     <div class="ambient-bg"></div>
     <div class="cursor-glow"></div>
 
+    <!-- WALLPAPER OVERLAY (photo bg sits here, behind everything) -->
+    <div id="wallpaper-overlay"></div>
+
     <!-- MAIN DASHBOARD -->
     <div class="dashboard-container">
 
         <!-- TOP BAR -->
         <header class="top-bar">
-
-            <button id="theme-toggle"
-                    class="glass-btn">
-
-                <i class="fas fa-moon"></i>
-
+            <button id="wallpaper-btn" class="glass-btn" title="Change wallpaper">
+                <i class="fas fa-image"></i>
             </button>
-
+            <button id="theme-toggle" class="glass-btn">
+                <i class="fas fa-moon"></i>
+            </button>
+            <button id="perf-toggle" class="glass-btn" title="Low-end mode (optimize performance)">
+                <i class="fas fa-gauge-high"></i>
+            </button>
+            <button id="settings-btn" class="glass-btn" title="Settings">
+                <i class="fas fa-cog"></i>
+            </button>
         </header>
 
         <!-- HERO SECTION -->
@@ -47,124 +52,345 @@
 
             <!-- CLOCK -->
             <div class="time-container glass-card">
-
-                <h1 id="clock">
-                    --:--
-                </h1>
-
-                <p id="date">
-                    Loading date...
-                </p>
-
+                <p id="greeting">Good morning</p>
+                <h1 id="clock">--:--</h1>
+                <p id="date">Loading date...</p>
             </div>
 
-  <!-- SEARCH BAR -->
-
-<div class="search-container">
-
-    <i class="fas fa-search search-icon"></i>
-
-    <input
-        type="search"
-        id="google-search"
-        placeholder="Search the web..."
-        autocomplete="off"
-        enterkeyhint="search">
-
-</div>
+            <!-- SEARCH BAR -->
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input
+                    type="search"
+                    id="google-search"
+                    placeholder="Search the web..."
+                    autocomplete="off"
+                    enterkeyhint="search">
+            </div>
 
         </main>
 
-        <!-- WIDGET GRID -->
-        <section class="widget-grid">
+        <!-- SHORTCUTS BAR -->
+        <div class="shortcuts-bar">
+            <div id="shortcuts-list" class="shortcuts-list"></div>
+            <button id="add-shortcut-btn" class="shortcut-add-btn" title="Add shortcut">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
 
-<!-- WEATHER -->
-<div class="widget glass-card">
-    <h3>
-        <i class="fas fa-cloud"></i>
-        Weather
-    </h3>
-    <div id="weather-info">
-        <p class="temp">--°C</p>
-        <p class="desc"></p>
-    </div>
-</div>
+        <!-- WIDGET GRID -->
+        <section class="widget-grid" id="widget-grid">
+
+            <!-- WEATHER -->
+            <div class="widget glass-card" data-id="weather">
+                <div class="drag-handle" title="Drag to reorder"><i class="fas fa-grip-vertical"></i></div>
+                <h3><i class="fas fa-cloud"></i> Weather</h3>
+                <div id="weather-info">
+                    <p class="temp">--°C</p>
+                    <p class="desc">Loading...</p>
+                    <div class="weather-input-group">
+                        <input type="text" id="city-input" placeholder="Enter city..." />
+                        <button id="city-search-btn"><i class="fas fa-search"></i></button>
+                    </div>
+                </div>
+            </div>
 
             <!-- NOTES -->
-            <div class="widget glass-card">
-
-                <h3>
-                    <i class="fas fa-pen"></i>
-                    Quick Notes
-                </h3>
-
-                <textarea id="quick-notes"
-                          placeholder="Write your thoughts..."></textarea>
-
+            <div class="widget glass-card" data-id="notes">
+                <div class="drag-handle" title="Drag to reorder"><i class="fas fa-grip-vertical"></i></div>
+                <h3><i class="fas fa-pen"></i> Quick Notes</h3>
+                <textarea id="quick-notes" placeholder="Write your thoughts..."></textarea>
             </div>
 
             <!-- TODO -->
-            <div class="widget glass-card">
-
-                <h3>
-                    <i class="fas fa-check-circle"></i>
-                    Tasks
-                </h3>
-
+            <div class="widget glass-card" data-id="tasks">
+                <div class="drag-handle" title="Drag to reorder"><i class="fas fa-grip-vertical"></i></div>
+                <h3><i class="fas fa-check-circle"></i> Tasks</h3>
                 <div class="todo-input-group">
-
-                    <input type="search"
-                           id="todo-input"
-                           placeholder="Add a task...">
-
-                    <button id="add-todo">
-                        <i class="fas fa-plus"></i>
-                    </button>
-
+                    <input type="text" id="todo-input" placeholder="Add a task...">
+                    <button id="add-todo"><i class="fas fa-plus"></i></button>
                 </div>
-
                 <ul id="todo-list"></ul>
-
             </div>
 
             <!-- SPOTIFY -->
-            <div class="widget glass-card">
-
-                <h3>
-                    <i class="fab fa-spotify"></i>
-                    Chill Music
-                </h3>
-
+            <div class="widget glass-card" data-id="spotify">
+                <div class="drag-handle" title="Drag to reorder"><i class="fas fa-grip-vertical"></i></div>
+                <h3><i class="fab fa-spotify"></i> Chill Music</h3>
                 <iframe
-                    data-testid="embed-iframe"
-
                     style="border-radius:16px"
-
                     src="https://open.spotify.com/embed/playlist/33f6SkybskktunLAWRpSAe?utm_source=generator"
-
                     width="100%"
-
                     height="352"
-
                     frameBorder="0"
-
                     allowfullscreen=""
-
                     allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-
                     loading="lazy">
-
                 </iframe>
-
             </div>
 
         </section>
 
     </div>
 
+    <!-- FLOATING CALENDAR (hover left edge of screen) -->
+    <div id="floating-calendar-panel" class="floating-calendar-panel">
+        <div class="floating-calendar-card glass-card">
+            <div id="floating-calendar"></div>
+        </div>
+    </div>
+
+    <!-- SHORTCUT MODAL -->
+    <div id="shortcut-modal" class="shortcut-modal" role="dialog" aria-modal="true" aria-label="Add shortcut">
+        <div class="shortcut-modal-inner glass-card">
+            <div class="shortcut-modal-header">
+                <h2><i class="fas fa-link"></i> <span id="shortcut-modal-title">Add Shortcut</span></h2>
+                <button id="shortcut-close" class="glass-btn small-btn" title="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="shortcut-form">
+                <!-- Icon picker -->
+                <div class="shortcut-icon-row">
+                    <div id="shortcut-icon-preview" class="shortcut-icon-preview">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <div class="shortcut-icon-options" id="shortcut-icon-options"></div>
+                </div>
+
+                <div class="shortcut-field">
+                    <label>Name</label>
+                    <input type="text" id="shortcut-name" placeholder="e.g. YouTube" maxlength="20" />
+                </div>
+                <div class="shortcut-field">
+                    <label>URL</label>
+                    <input type="url" id="shortcut-url" placeholder="e.g. https://youtube.com" />
+                </div>
+
+                <div class="shortcut-form-actions">
+                    <button id="shortcut-delete-btn" class="shortcut-delete-action hidden">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                    <button id="shortcut-save-btn" class="shortcut-save-action">
+                        <i class="fas fa-check"></i> Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WALLPAPER PICKER MODAL -->
+    <div id="wallpaper-modal" class="wallpaper-modal" role="dialog" aria-modal="true" aria-label="Choose wallpaper">
+        <div class="wallpaper-modal-inner glass-card">
+
+            <div class="wallpaper-modal-header">
+                <h2><i class="fas fa-palette"></i> Wallpaper</h2>
+                <button id="wallpaper-close" class="glass-btn small-btn" title="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- TAB SWITCHER -->
+            <div class="wp-tabs">
+                <button class="wp-tab active" data-tab="gradients">Gradients</button>
+                <button class="wp-tab" data-tab="unsplash">Photos</button>
+            </div>
+
+            <!-- GRADIENTS TAB -->
+            <div class="wp-panel" id="tab-gradients">
+                <div class="gradient-grid" id="gradient-grid"></div>
+                <button id="clear-wallpaper" class="wp-clear-btn">
+                    <i class="fas fa-ban"></i> Remove wallpaper
+                </button>
+            </div>
+
+            <!-- UNSPLASH TAB -->
+            <div class="wp-panel hidden" id="tab-unsplash">
+                <div class="unsplash-search-row">
+                    <input type="text" id="unsplash-query" placeholder="e.g. mountains, city, aurora..." />
+                    <button id="unsplash-search-btn"><i class="fas fa-search"></i></button>
+                </div>
+                <div id="unsplash-grid" class="unsplash-grid">
+                    <p class="wp-hint">Search for a photo above ↑</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div id="settings-modal" class="settings-modal" role="dialog" aria-modal="true" aria-label="Settings">
+        <div class="settings-modal-inner glass-card">
+
+            <div class="settings-modal-header">
+                <h2><i class="fas fa-cog"></i> Settings</h2>
+                <button id="settings-close" class="glass-btn small-btn" title="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- SECTION: Clock -->
+            <div class="settings-section">
+                <p class="settings-section-title">Clock</p>
+                <label class="settings-row" for="setting-12hr">
+                    <span>12-hour format</span>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="setting-12hr">
+                        <span class="toggle-track"></span>
+                    </div>
+                </label>
+                <label class="settings-row" for="setting-seconds">
+                    <span>Show seconds</span>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="setting-seconds">
+                        <span class="toggle-track"></span>
+                    </div>
+                </label>
+            </div>
+
+            <!-- SECTION: Search -->
+            <div class="settings-section">
+                <p class="settings-section-title">Search Engine</p>
+                <div class="settings-engine-grid" id="engine-grid">
+                    <button class="engine-btn active" data-engine="google" data-url="https://www.google.com/search?q=">
+                        <i class="fab fa-google"></i> Google
+                    </button>
+                    <button class="engine-btn" data-engine="bing" data-url="https://www.bing.com/search?q=">
+                        <i class="fas fa-b"></i> Bing
+                    </button>
+                    <button class="engine-btn" data-engine="duckduckgo" data-url="https://duckduckgo.com/?q=">
+                        <i class="fas fa-shield-alt"></i> DuckDuckGo
+                    </button>
+                    <button class="engine-btn" data-engine="brave" data-url="https://search.brave.com/search?q=">
+                        <i class="fas fa-shield-alt"></i> Brave
+                    </button>
+                </div>
+            </div>
+
+            <!-- SECTION: Widgets -->
+            <div class="settings-section">
+                <p class="settings-section-title">Widgets</p>
+                <label class="settings-row" for="setting-weather">
+                    <span>Show weather</span>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="setting-weather" checked>
+                        <span class="toggle-track"></span>
+                    </div>
+                </label>
+                <label class="settings-row" for="setting-notes">
+                    <span>Show notes</span>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="setting-notes" checked>
+                        <span class="toggle-track"></span>
+                    </div>
+                </label>
+                <label class="settings-row" for="setting-tasks">
+                    <span>Show tasks</span>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="setting-tasks" checked>
+                        <span class="toggle-track"></span>
+                    </div>
+                </label>
+                <label class="settings-row" for="setting-spotify">
+                    <span>Show music player</span>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="setting-spotify" checked>
+                        <span class="toggle-track"></span>
+                    </div>
+                </label>
+            </div>
+
+            <!-- SECTION: Font -->
+            <div class="settings-section">
+                <p class="settings-section-title">Font</p>
+                <div class="font-grid" id="font-grid">
+                    <button class="font-btn active" data-font="Inter" style="font-family:'Inter',sans-serif">
+                        <span class="font-preview">Aa</span>
+                        <span class="font-name">Inter</span>
+                    </button>
+                    <button class="font-btn" data-font="Raleway" style="font-family:'Raleway',sans-serif">
+                        <span class="font-preview">Aa</span>
+                        <span class="font-name">Raleway</span>
+                    </button>
+                    <button class="font-btn" data-font="Space Grotesk" style="font-family:'Space Grotesk',sans-serif">
+                        <span class="font-preview">Aa</span>
+                        <span class="font-name">Space Grotesk</span>
+                    </button>
+                    <button class="font-btn" data-font="DM Sans" style="font-family:'DM Sans',sans-serif">
+                        <span class="font-preview">Aa</span>
+                        <span class="font-name">DM Sans</span>
+                    </button>
+                    <button class="font-btn" data-font="Outfit" style="font-family:'Outfit',sans-serif">
+                        <span class="font-preview">Aa</span>
+                        <span class="font-name">Outfit</span>
+                    </button>
+                    <button class="font-btn" data-font="Segoe UI" style="font-family:'Segoe UI',sans-serif">
+                        <span class="font-preview">Aa</span>
+                        <span class="font-name">System</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SECTION: Glassmorphism -->
+            <div class="settings-section">
+                <p class="settings-section-title">Glass Intensity</p>
+                <div class="glass-slider-row">
+                    <span class="glass-label-icon"><i class="fas fa-droplet"></i> Blur</span>
+                    <input type="range" id="setting-blur" min="0" max="40" step="1" value="12" class="glass-slider" />
+                    <span class="glass-slider-val" id="blur-val">12px</span>
+                </div>
+                <div class="glass-slider-row">
+                    <span class="glass-label-icon"><i class="fas fa-circle-half-stroke"></i> Opacity</span>
+                    <input type="range" id="setting-opacity" min="0" max="30" step="1" value="5" class="glass-slider" />
+                    <span class="glass-slider-val" id="opacity-val">5%</span>
+                </div>
+                <div class="glass-slider-row">
+                    <span class="glass-label-icon"><i class="fas fa-border-all"></i> Border</span>
+                    <input type="range" id="setting-border" min="0" max="30" step="1" value="8" class="glass-slider" />
+                    <span class="glass-slider-val" id="border-val">8%</span>
+                </div>
+                <!-- Live preview card -->
+                <div class="glass-preview-wrap">
+                    <div id="glass-preview-card" class="glass-preview-card">
+                        <i class="fas fa-star"></i>
+                        <span>Preview</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: Accent Color -->
+            <div class="settings-section">
+                <p class="settings-section-title">Accent Color</p>
+                <div class="accent-swatches" id="accent-swatches">
+                    <button class="accent-swatch" data-color="#8b5cf6" style="background:#8b5cf6" title="Violet"></button>
+                    <button class="accent-swatch" data-color="#3b82f6" style="background:#3b82f6" title="Blue"></button>
+                    <button class="accent-swatch" data-color="#06b6d4" style="background:#06b6d4" title="Cyan"></button>
+                    <button class="accent-swatch" data-color="#10b981" style="background:#10b981" title="Emerald"></button>
+                    <button class="accent-swatch" data-color="#f59e0b" style="background:#f59e0b" title="Amber"></button>
+                    <button class="accent-swatch" data-color="#ef4444" style="background:#ef4444" title="Red"></button>
+                    <button class="accent-swatch" data-color="#ec4899" style="background:#ec4899" title="Pink"></button>
+                    <button class="accent-swatch" data-color="#f97316" style="background:#f97316" title="Orange"></button>
+                </div>
+                <div class="accent-custom-row">
+                    <label for="accent-custom">Custom color</label>
+                    <input type="color" id="accent-custom" value="#8b5cf6" />
+                </div>
+            </div>
+
+            <!-- SECTION: Danger Zone -->
+            <div class="settings-section">
+                <p class="settings-section-title">Data</p>
+                <button id="settings-clear-data" class="settings-danger-btn">
+                    <i class="fas fa-trash-alt"></i> Clear all dashboard data
+                </button>
+            </div>
+
+        </div>
+    </div>
+
     <!-- JAVASCRIPT -->
     <script src="script.js"></script>
 
 </body>
-
 </html>
