@@ -1,7 +1,8 @@
 /* ==================================================
    PREMIUM AESTHETIC GLASSMORPHISM DASHBOARD
    - Unified macOS Hover
-   - Scrollbar Removed (No White Lines)
+   - Scrollbar Removed
+   - Wallpaper Picker
    - Optimized for Delhi/Haze Vibe
 ================================================== */
 
@@ -14,9 +15,12 @@
     --bg-third: #111827;
     --glass-bg: rgba(255, 255, 255, 0.05);
     --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-blur: 12px;
     --text-main: #f8fafc;
     --text-muted: #9ca3af;
     --accent: #8b5cf6;
+    --accent-dark: #7c3aed;
+    --font-main: 'Inter', sans-serif;
     --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
@@ -31,32 +35,30 @@
 }
 
 /* ==================================================
-   RESET & SCROLLBAR REMOVAL (The "Sucks" Fix)
+   RESET & SCROLLBAR REMOVAL
 ================================================== */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: "Segoe UI", system-ui, sans-serif;
-
-    /* Completely hide scrollbars everywhere */
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;     /* Firefox */
+    font-family: var(--font-main);
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
 
 *::-webkit-scrollbar {
-    display: none;             /* Chrome, Safari, Opera */
+    display: none;
 }
 
 html, body {
     width: 100%;
     min-height: 100vh;
-    overflow-x: hidden; /* Fixes the horizontal white line */
+    overflow-x: hidden;
     background-color: var(--bg-main);
 }
 
 body {
-    background: 
+    background:
         radial-gradient(circle at top left, rgba(139, 92, 246, 0.18), transparent 30%),
         radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.12), transparent 30%),
         linear-gradient(135deg, var(--bg-main), var(--bg-secondary), var(--bg-third));
@@ -65,6 +67,39 @@ body {
     justify-content: center;
     align-items: center;
     padding: 40px;
+}
+
+/* ==================================================
+   WALLPAPER OVERLAY
+   Sits fixed behind everything; JS sets background
+================================================== */
+#wallpaper-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    transition: background 0.6s ease, opacity 0.6s ease;
+    opacity: 1;
+}
+
+/* When a wallpaper is active, dim body's own bg so photo/gradient shows */
+body.has-wallpaper {
+    background: none;
+    background-color: transparent;
+}
+
+body.has-wallpaper .ambient-bg {
+    opacity: 0.4;
+}
+
+/* All content above the overlay */
+.dashboard-container,
+.floating-calendar-panel,
+.wallpaper-modal,
+.ambient-bg,
+.cursor-glow {
+    position: relative;
+    z-index: 1;
 }
 
 /* ==================================================
@@ -80,13 +115,53 @@ body {
     left: 50%;
     transform: translate(-50%, -50%);
     pointer-events: none;
-    z-index: -1;
-    animation: floatGlow 20s ease-in-out infinite alternate;
+    z-index: 0;
+    transition: opacity 0.6s ease;
 }
 
 @keyframes floatGlow {
     from { transform: translate(-50%, -50%) scale(1); }
-    to { transform: translate(-50%, -50%) scale(1.15); }
+    to   { transform: translate(-50%, -50%) scale(1.15); }
+}
+
+/* ==================================================
+   PAGE LOAD ANIMATIONS
+================================================== */
+@keyframes fadeSlideDown {
+    from { opacity: 0; transform: translateY(-18px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.top-bar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    opacity: 0;
+    animation: fadeSlideDown 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
+}
+
+/* Widgets stagger in one by one */
+.widget-grid .widget:nth-child(1) { opacity: 0; animation: fadeSlideUp 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.50s forwards; }
+.widget-grid .widget:nth-child(2) { opacity: 0; animation: fadeSlideUp 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.62s forwards; }
+.widget-grid .widget:nth-child(3) { opacity: 0; animation: fadeSlideUp 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.74s forwards; }
+.widget-grid .widget:nth-child(4) { opacity: 0; animation: fadeSlideUp 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.86s forwards; }
+.widget-grid .widget:nth-child(5) { opacity: 0; animation: fadeSlideUp 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.98s forwards; }
+.widget-grid .widget:nth-child(6) { opacity: 0; animation: fadeSlideUp 0.65s cubic-bezier(0.22, 1, 0.36, 1) 1.10s forwards; }
+
+/* Ambient glow fades in softly */
+.ambient-bg {
+    opacity: 0;
+    animation: fadeIn 1.2s ease 0.2s forwards, floatGlow 20s ease-in-out 1.4s infinite alternate;
 }
 
 /* ==================================================
@@ -100,13 +175,21 @@ body {
     gap: 32px;
 }
 
-/* ==================================================
-   GLASS BUTTON (Top Right Toggle)
-================================================== */
-.top-bar {
-    display: flex;
-    justify-content: flex-end;
+/* Hero fades up */
+.hero-section {
+    opacity: 0;
+    animation: fadeSlideUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.25s forwards;
 }
+
+/* Shortcuts fades up after hero */
+.shortcuts-bar {
+    opacity: 0;
+    animation: fadeSlideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.4s forwards;
+}
+
+/* ==================================================
+   TOP BAR & GLASS BUTTONS
+================================================== */
 
 .glass-btn {
     width: 46px;
@@ -118,6 +201,9 @@ body {
     cursor: pointer;
     backdrop-filter: blur(10px);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .glass-btn:hover {
@@ -126,21 +212,24 @@ body {
     border-color: var(--accent);
 }
 
+.small-btn {
+    width: 36px;
+    height: 36px;
+}
+
 /* ==================================================
    CORE GLASS CARD & macOS HOVER
 ================================================== */
 .glass-card {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+    background: linear-gradient(135deg, var(--glass-bg), rgba(255, 255, 255, 0.03));
     border: 1px solid var(--glass-border);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
     border-radius: 28px;
     padding: 2rem;
     box-shadow: var(--shadow);
-    
-    /* Smooth Transition for Hover */
-    transition: 
-        transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), 
+    transition:
+        transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1),
         box-shadow 0.4s cubic-bezier(0.165, 0.84, 0.44, 1),
         border 0.3s ease,
         background 0.3s ease;
@@ -148,16 +237,16 @@ body {
 }
 
 .glass-card:hover {
-    transform: translateY(-10px); /* macOS style lift */
+    transform: translateY(-10px);
     border: 1px solid rgba(139, 92, 246, 0.4);
     background: rgba(255, 255, 255, 0.07);
-    box-shadow: 
+    box-shadow:
         0 20px 40px rgba(0, 0, 0, 0.45),
         0 0 20px rgba(139, 92, 246, 0.1);
 }
 
 /* ==================================================
-   HERO ELEMENTS (Clock & Search)
+   HERO SECTION (Clock & Search)
 ================================================== */
 .hero-section {
     display: flex;
@@ -171,11 +260,28 @@ body {
     min-width: 350px;
 }
 
+#greeting {
+    font-size: 1.1rem;
+    font-weight: 400;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 4px;
+    opacity: 0.85;
+}
+
 .time-container h1 {
     font-size: 6rem;
     font-weight: 200;
     letter-spacing: 4px;
     text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+.time-container p#date {
+    color: var(--text-muted);
+    margin-top: 6px;
+    font-size: 1rem;
+    letter-spacing: 1px;
 }
 
 .search-container {
@@ -199,6 +305,11 @@ body {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 15px rgba(139, 92, 246, 0.2);
 }
 
+.search-icon {
+    color: var(--text-muted);
+    font-size: 1rem;
+}
+
 .search-container input {
     width: 100%;
     background: transparent;
@@ -206,6 +317,10 @@ body {
     outline: none;
     color: var(--text-main);
     font-size: 1.1rem;
+}
+
+.search-container input::placeholder {
+    color: var(--text-muted);
 }
 
 /* ==================================================
@@ -227,23 +342,177 @@ body {
     color: var(--text-main);
 }
 
-/* Specific Widget Styles */
-.temp { font-size: 3.5rem; font-weight: 300; margin-bottom: 5px; }
-.desc { color: var(--text-muted); text-transform: capitalize; }
+/* ==================================================
+   WEATHER WIDGET
+================================================== */
+.temp {
+    font-size: 3.5rem;
+    font-weight: 300;
+    margin-bottom: 5px;
+}
+
+.desc {
+    color: var(--text-muted);
+    text-transform: capitalize;
+    margin-bottom: 4px;
+}
+
+.weather-input-group {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.weather-input-group input {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-main);
+    font-size: 0.88rem;
+    outline: none;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.weather-input-group input:focus {
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.09);
+}
+
+.weather-input-group input::placeholder { color: var(--text-muted); }
+
+.weather-input-group button {
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: none;
+    background: var(--accent);
+    color: white;
+    cursor: pointer;
+    font-size: 0.88rem;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.weather-input-group button:hover {
+    transform: scale(1.08);
+    background: var(--accent-dark);
+}
 
 /* ==================================================
-   CALENDAR WIDGET
+   NOTES WIDGET
 ================================================== */
-#calendar {
+#quick-notes {
     width: 100%;
+    height: 180px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 18px;
+    padding: 16px;
+    outline: none;
+    resize: none;
+    color: var(--text-main);
+    font-size: 1rem;
+    line-height: 1.6;
+    caret-color: var(--accent);
 }
+
+#quick-notes::placeholder { color: var(--text-muted); }
+
+/* ==================================================
+   TODO WIDGET
+================================================== */
+.todo-input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.todo-input-group input {
+    flex: 1;
+    padding: 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--text-main);
+    outline: none;
+    font-size: 0.95rem;
+    transition: border-color 0.2s ease;
+}
+
+.todo-input-group input:focus { border-color: var(--accent); }
+.todo-input-group input::placeholder { color: var(--text-muted); }
+
+.todo-input-group button {
+    padding: 14px 18px;
+    border: none;
+    border-radius: 14px;
+    background: var(--accent);
+    color: white;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease;
+    font-size: 1rem;
+}
+
+.todo-input-group button:hover {
+    transform: scale(1.1);
+    background: var(--accent-dark);
+}
+
+#todo-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+#todo-list li {
+    background: rgba(255, 255, 255, 0.04);
+    padding: 14px;
+    border-radius: 14px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+}
+
+#todo-list li:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.delete-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: color 0.2s ease, background 0.2s ease;
+    opacity: 0;
+}
+
+#todo-list li:hover .delete-btn { opacity: 1; }
+
+.delete-btn:hover {
+    color: #f87171;
+    background: rgba(248, 113, 113, 0.1);
+}
+
+/* ==================================================
+   CALENDAR WIDGET (Floating)
+================================================== */
+#calendar { width: 100%; }
 
 .floating-calendar-panel {
     position: fixed;
     top: 50%;
     left: 0;
     transform: translate(-110%, -50%);
-    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.45s ease;
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.8s ease;
     z-index: 30;
     opacity: 0;
     pointer-events: none;
@@ -261,6 +530,10 @@ body {
     max-width: 88vw;
     padding: 1.3rem;
     border-radius: 24px;
+    background: rgba(15, 15, 30, 0.65) !important;
+    backdrop-filter: blur(28px) !important;
+    -webkit-backdrop-filter: blur(28px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
 }
 
 .calendar-header {
@@ -270,18 +543,19 @@ body {
     margin-bottom: 12px;
 }
 
-.cal-title {
-    font-weight: 600;
-}
+.cal-title { font-weight: 600; }
 
 .cal-nav {
     background: transparent;
-    border: 1px solid rgba(255,255,255,0.06);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     color: var(--text-main);
     padding: 6px 10px;
     border-radius: 8px;
     cursor: pointer;
+    transition: background 0.2s ease;
 }
+
+.cal-nav:hover { background: rgba(255, 255, 255, 0.08); }
 
 .calendar-grid {
     display: grid;
@@ -301,112 +575,1234 @@ body {
     align-items: center;
     justify-content: center;
     border-radius: 10px;
-    background: rgba(255,255,255,0.03);
+    background: rgba(255, 255, 255, 0.03);
     cursor: pointer;
     transition: transform 0.12s ease, background 0.12s ease;
+    font-size: 0.85rem;
 }
 
-.day:hover { transform: translateY(-4px); background: rgba(255,255,255,0.06); }
+.day:hover         { transform: translateY(-4px); background: rgba(255, 255, 255, 0.06); }
+.day.today         { border: 1px solid rgba(139, 92, 246, 0.5); }
+.day.selected      { background: var(--accent); color: white; }
+.day.empty         { background: transparent; cursor: default; }
 
-.day.today { border: 1px solid rgba(139,92,246,0.5); }
-.day.selected { background: var(--accent); color: white; }
+/* ==================================================
+   WALLPAPER MODAL
+================================================== */
+.wallpaper-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
 
-.day.empty { background: transparent; cursor: default; box-shadow: none; }
+.wallpaper-modal.open {
+    opacity: 1;
+    pointer-events: auto;
+}
 
-#quick-notes {
-    width: 100%;
-    height: 180px;
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 18px;
-    padding: 16px;
-    outline: none;
-    resize: none;
+.wallpaper-modal-inner {
+    width: 640px;
+    max-width: 94vw;
+    max-height: 88vh;
+    overflow-y: auto;
+    border-radius: 28px;
+    padding: 2rem;
+    background: rgba(10, 10, 25, 0.82) !important;
+    backdrop-filter: blur(30px) !important;
+    -webkit-backdrop-filter: blur(30px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+    /* Disable card hover lift inside modal */
+    transform: none !important;
+    transition: none !important;
+}
+
+/* Override the glass-card hover specifically for modal inner */
+.wallpaper-modal-inner:hover {
+    transform: none !important;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6) !important;
+    background: rgba(10, 10, 25, 0.82) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.wallpaper-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.4rem;
+}
+
+.wallpaper-modal-header h2 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
     color: var(--text-main);
-    font-size: 1rem;
 }
 
-.todo-input-group {
+/* ── Tabs ── */
+.wp-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1.4rem;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 5px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.wp-tab {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.92rem;
+    font-weight: 500;
+    transition: all 0.25s ease;
+}
+
+.wp-tab.active {
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);
+}
+
+.wp-tab:not(.active):hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--text-main);
+}
+
+.wp-panel { display: block; }
+.wp-panel.hidden { display: none; }
+
+/* ── Gradient grid ── */
+.gradient-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 1.2rem;
+}
+
+.gradient-swatch {
+    position: relative;
+    height: 80px;
+    border-radius: 16px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.gradient-swatch:hover {
+    transform: translateY(-4px) scale(1.03);
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.swatch-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 6px 8px;
+    background: rgba(0, 0, 0, 0.45);
+    color: white;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-align: center;
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.gradient-swatch:hover .swatch-label { opacity: 1; }
+
+/* ── Clear button ── */
+.wp-clear-btn {
+    width: 100%;
+    padding: 12px;
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 14px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.wp-clear-btn:hover {
+    background: rgba(248, 113, 113, 0.08);
+    border-color: rgba(248, 113, 113, 0.35);
+    color: #f87171;
+}
+
+/* ── Unsplash search row ── */
+.unsplash-search-row {
     display: flex;
     gap: 10px;
-    margin-bottom: 18px;
+    margin-bottom: 1.2rem;
 }
 
-.todo-input-group input {
+.unsplash-search-row input {
     flex: 1;
-    padding: 14px;
+    padding: 12px 16px;
     border-radius: 14px;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.06);
     color: var(--text-main);
+    font-size: 0.92rem;
     outline: none;
+    transition: border-color 0.2s ease;
 }
 
-.todo-input-group button {
-    padding: 14px 18px;
+.unsplash-search-row input:focus { border-color: var(--accent); }
+.unsplash-search-row input::placeholder { color: var(--text-muted); }
+
+.unsplash-search-row button {
+    padding: 12px 18px;
     border: none;
     border-radius: 14px;
     background: var(--accent);
     color: white;
     cursor: pointer;
-    transition: transform 0.2s ease;
+    font-size: 0.92rem;
+    transition: transform 0.2s ease, background 0.2s ease;
 }
 
-.todo-input-group button:hover { transform: scale(1.1); }
+.unsplash-search-row button:hover {
+    transform: scale(1.06);
+    background: var(--accent-dark);
+}
 
-#todo-list li {
-    background: rgba(255, 255, 255, 0.04);
-    padding: 14px;
+/* ── Unsplash photo grid ── */
+.unsplash-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.unsplash-thumb {
+    height: 100px;
     border-radius: 14px;
-    margin-bottom: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border: 1px solid transparent;
-    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    background-size: cover;
+    background-position: center;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-#todo-list li:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.1);
+.unsplash-thumb:hover {
+    transform: translateY(-4px) scale(1.03);
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.wp-hint {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--text-muted);
+    padding: 2rem 0;
+    font-size: 0.9rem;
 }
 
 /* ==================================================
-   RESPONSIVE DESIGN
+   SHORTCUTS BAR
+================================================== */
+.shortcuts-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.shortcuts-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    flex: 1;
+}
+
+.shortcut-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    color: var(--text-main);
+    text-decoration: none;
+    font-size: 0.88rem;
+    font-weight: 500;
+    transition: all 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.shortcut-chip:hover {
+    background: rgba(139, 92, 246, 0.18);
+    border-color: rgba(139, 92, 246, 0.45);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.sc-icon {
+    font-size: 1rem;
+    opacity: 0.9;
+    width: 18px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.sc-label {
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sc-edit-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.72rem;
+    padding: 2px 4px;
+    border-radius: 6px;
+    opacity: 0;
+    transition: opacity 0.2s ease, color 0.2s ease, background 0.2s ease;
+    margin-left: 2px;
+    flex-shrink: 0;
+}
+
+.shortcut-chip:hover .sc-edit-btn { opacity: 1; }
+.sc-edit-btn:hover {
+    color: var(--accent);
+    background: rgba(139, 92, 246, 0.15);
+}
+
+.shortcut-add-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-muted);
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.25s ease;
+}
+
+.shortcut-add-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(139, 92, 246, 0.1);
+    transform: scale(1.1) rotate(90deg);
+}
+
+/* ==================================================
+   SHORTCUT MODAL
+================================================== */
+.shortcut-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.shortcut-modal.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.shortcut-modal-inner {
+    width: 480px;
+    max-width: 94vw;
+    border-radius: 28px;
+    padding: 2rem;
+    background: rgba(10, 10, 25, 0.88) !important;
+    backdrop-filter: blur(30px) !important;
+    -webkit-backdrop-filter: blur(30px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+    transform: none !important;
+    transition: none !important;
+}
+
+.shortcut-modal-inner:hover {
+    transform: none !important;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6) !important;
+    background: rgba(10, 10, 25, 0.88) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.shortcut-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.6rem;
+}
+
+.shortcut-modal-header h2 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-main);
+}
+
+/* ── Icon picker ── */
+.shortcut-icon-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 1.4rem;
+}
+
+.shortcut-icon-preview {
+    width: 54px;
+    height: 54px;
+    border-radius: 16px;
+    background: rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(139, 92, 246, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.shortcut-icon-options {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 6px;
+    flex: 1;
+    max-height: 110px;
+    overflow-y: auto;
+}
+
+.icon-opt {
+    width: 34px;
+    height: 34px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.88rem;
+    transition: all 0.18s ease;
+}
+
+.icon-opt:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.icon-opt.active {
+    background: rgba(139, 92, 246, 0.25);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* ── Form fields ── */
+.shortcut-form { display: flex; flex-direction: column; gap: 0; }
+
+.shortcut-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 1rem;
+}
+
+.shortcut-field label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.shortcut-field input {
+    padding: 12px 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-main);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.shortcut-field input:focus {
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.09);
+}
+
+.shortcut-field input::placeholder { color: var(--text-muted); }
+
+/* ── Form actions ── */
+.shortcut-form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 0.6rem;
+}
+
+.shortcut-delete-action {
+    flex: 0;
+    padding: 12px 16px;
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    border-radius: 14px;
+    background: rgba(248, 113, 113, 0.08);
+    color: #f87171;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.shortcut-delete-action:hover {
+    background: rgba(248, 113, 113, 0.18);
+    border-color: rgba(248, 113, 113, 0.6);
+}
+
+.shortcut-save-action {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 14px;
+    background: var(--accent);
+    color: white;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.shortcut-save-action:hover {
+    background: var(--accent-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(139, 92, 246, 0.4);
+}
+
+.hidden { display: none !important; }
+
+/* ==================================================
+   RESPONSIVE
 ================================================== */
 @media (max-width: 768px) {
     body { padding: 20px; }
     .time-container h1 { font-size: 4rem; }
     .widget-grid { grid-template-columns: 1fr; }
+    .gradient-grid { grid-template-columns: repeat(3, 1fr); }
+    .unsplash-grid  { grid-template-columns: repeat(2, 1fr); }
+    .shortcut-icon-options { grid-template-columns: repeat(7, 1fr); }
 }
 
-.weather-input-group {
+/* ==================================================
+   LIGHT MODE FIXES
+================================================== */
+[data-theme="light"] .search-container input::placeholder { color: #94a3b8; }
+[data-theme="light"] #quick-notes::placeholder            { color: #94a3b8; }
+[data-theme="light"] .todo-input-group input::placeholder { color: #94a3b8; }
+[data-theme="light"] .weather-input-group input::placeholder { color: #94a3b8; }
+[data-theme="light"] #city-input::placeholder             { color: #94a3b8; }
+[data-theme="light"] .unsplash-search-row input::placeholder { color: #94a3b8; }
+
+[data-theme="light"] .wallpaper-modal-inner {
+    background: rgba(240, 242, 250, 0.9) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .wp-tabs {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .wp-tab:not(.active) { color: #64748b; }
+
+[data-theme="light"] .shortcut-modal-inner {
+    background: rgba(240, 242, 250, 0.95) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .shortcut-chip {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .shortcut-field input::placeholder { color: #94a3b8; }
+
+/* ==================================================
+   SETTINGS MODAL
+================================================== */
+.settings-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
     display: flex;
-    gap: 8px;
-    margin-top: 10px;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
 }
 
-.weather-input-group input {
-    flex: 1;
-    padding: 6px 10px;
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.2);
-    background: rgba(255,255,255,0.1);
-    color: inherit;
-    font-size: 0.85rem;
-    outline: none;
+.settings-modal.open {
+    opacity: 1;
+    pointer-events: auto;
 }
 
-.weather-input-group button {
-    padding: 6px 10px;
-    border-radius: 8px;
-    border: none;
-    background: rgba(255,255,255,0.15);
-    color: inherit;
+.settings-modal-inner {
+    width: 480px;
+    max-width: 94vw;
+    max-height: 88vh;
+    overflow-y: auto;
+    border-radius: 28px;
+    padding: 2rem;
+    background: rgba(10, 10, 25, 0.88) !important;
+    backdrop-filter: blur(30px) !important;
+    -webkit-backdrop-filter: blur(30px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+    transform: none !important;
+}
+
+.settings-modal-inner:hover {
+    transform: none !important;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6) !important;
+    background: rgba(10, 10, 25, 0.88) !important;
+}
+
+.settings-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.6rem;
+}
+
+.settings-modal-header h2 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-main);
+}
+
+/* ── Section ── */
+.settings-section {
+    margin-bottom: 1.6rem;
+    padding-bottom: 1.4rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.settings-section:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.settings-section-title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--accent);
+    margin-bottom: 1rem;
+    opacity: 0.9;
+}
+
+/* ── Row ── */
+.settings-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
     cursor: pointer;
-    transition: background 0.2s;
+    user-select: none;
 }
 
-.weather-input-group button:hover {
-    background: rgba(255,255,255,0.25);
+.settings-row span {
+    font-size: 0.95rem;
+    color: var(--text-main);
+}
+
+/* ── Toggle switch ── */
+.toggle-switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+    pointer-events: none;
+}
+
+.toggle-track {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: background 0.25s ease, border-color 0.25s ease;
+}
+
+.toggle-track::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), background 0.25s ease;
+}
+
+.toggle-switch input:checked + .toggle-track {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.toggle-switch input:checked + .toggle-track::after {
+    transform: translateX(20px);
+    background: white;
+}
+
+/* ── Search engine grid ── */
+.settings-engine-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.engine-btn {
+    padding: 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.engine-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-main);
+}
+
+.engine-btn.active {
+    background: rgba(139, 92, 246, 0.2);
+    border-color: var(--accent);
+    color: var(--text-main);
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.2);
+}
+
+/* ── Danger button ── */
+.settings-danger-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 14px;
+    border: 1px dashed rgba(248, 113, 113, 0.3);
+    background: transparent;
+    color: #f87171;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.settings-danger-btn:hover {
+    background: rgba(248, 113, 113, 0.1);
+    border-color: rgba(248, 113, 113, 0.5);
+}
+
+/* Light mode overrides */
+[data-theme="light"] .settings-modal-inner {
+    background: rgba(240, 242, 250, 0.95) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .settings-section {
+    border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .toggle-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .engine-btn {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #64748b;
+}
+
+[data-theme="light"] .engine-btn:hover {
+    background: rgba(0, 0, 0, 0.08);
+    color: #0f172a;
+}
+
+/* Cog spin on hover */
+#settings-btn:hover i {
+    animation: spin-cog 0.5s ease;
+}
+
+@keyframes spin-cog {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(90deg); }
+}
+
+/* ==================================================
+   FONT PICKER
+================================================== */
+.font-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.font-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 10px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-main);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.font-btn:hover {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.18);
+    transform: translateY(-2px);
+}
+
+.font-btn.active-font {
+    background: rgba(139, 92, 246, 0.18);
+    border-color: var(--accent);
+    box-shadow: 0 0 14px rgba(139, 92, 246, 0.2);
+}
+
+.font-preview {
+    font-size: 1.6rem;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--text-main);
+}
+
+.font-name {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.font-btn.active-font .font-name {
+    color: var(--accent);
+}
+
+/* Light mode */
+[data-theme="light"] .font-btn {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .font-btn:hover {
+    background: rgba(0, 0, 0, 0.08);
+}
+.accent-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 1rem;
+}
+
+.accent-swatch {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    flex-shrink: 0;
+}
+
+.accent-swatch:hover {
+    transform: scale(1.18);
+    box-shadow: 0 0 10px rgba(255,255,255,0.25);
+}
+
+.accent-swatch.active-swatch {
+    border-color: white;
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.3);
+    transform: scale(1.15);
+}
+
+.accent-custom-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0 2px;
+}
+
+.accent-custom-row label {
+    font-size: 0.92rem;
+    color: var(--text-muted);
+}
+
+#accent-custom {
+    width: 44px;
+    height: 30px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: transparent;
+    cursor: pointer;
+    padding: 2px;
+}
+
+/* ==================================================
+   GLASSMORPHISM INTENSITY SLIDERS
+================================================== */
+.glass-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+}
+
+.glass-label-icon {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    width: 72px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.glass-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+    outline: none;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.glass-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(139, 92, 246, 0.5);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.glass-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 14px rgba(139, 92, 246, 0.7);
+}
+
+.glass-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border: none;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(139, 92, 246, 0.5);
+}
+
+.glass-slider-val {
+    font-size: 0.78rem;
+    color: var(--accent);
+    font-weight: 600;
+    width: 34px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+/* Live preview card */
+.glass-preview-wrap {
+    margin-top: 14px;
+    border-radius: 18px;
+    overflow: hidden;
+    /* Colourful blobs behind the card so blur is actually visible */
+    background:
+        radial-gradient(circle at 20% 50%, rgba(139,92,246,0.7) 0%, transparent 50%),
+        radial-gradient(circle at 80% 30%, rgba(59,130,246,0.7) 0%, transparent 50%),
+        radial-gradient(circle at 50% 80%, rgba(236,72,153,0.6) 0%, transparent 50%),
+        linear-gradient(135deg, #0f0c29, #302b63);
+    padding: 20px;
+}
+
+.glass-preview-card {
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.92rem;
+    color: white;
+    transition: backdrop-filter 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.glass-preview-card i {
+    color: white;
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
+/* Light mode */
+[data-theme="light"] .glass-slider {
+    background: rgba(0, 0, 0, 0.12);
+}
+
+.wp-hint-small {
+    grid-column: 1 / -1;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    opacity: 0.7;
+    padding: 8px 0 0;
+    text-align: center;
+}
+
+/* ==================================================
+   DRAG TO REORDER
+================================================== */
+.drag-handle {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    color: var(--text-muted);
+    opacity: 0;
+    cursor: grab;
+    font-size: 0.9rem;
+    padding: 4px 6px;
+    border-radius: 8px;
+    transition: opacity 0.2s ease, color 0.2s ease, background 0.2s ease;
+    z-index: 2;
+}
+
+.widget:hover .drag-handle {
+    opacity: 1;
+}
+
+.drag-handle:hover {
+    color: var(--accent);
+    background: rgba(139, 92, 246, 0.1);
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+/* Widget needs relative positioning for the handle */
+.widget {
+    position: relative;
+}
+
+/* Card being dragged */
+.widget.is-dragging {
+    position: fixed;
+    z-index: 999;
+    pointer-events: none;
+    opacity: 0.85;
+    transform: scale(1.03) rotate(1deg);
+    box-shadow:
+        0 30px 60px rgba(0, 0, 0, 0.5),
+        0 0 30px rgba(139, 92, 246, 0.3);
+    border-color: rgba(139, 92, 246, 0.5) !important;
+    transition: none !important;
+}
+
+/* Drop zone placeholder */
+.drag-placeholder {
+    border-radius: 28px;
+    border: 2px dashed rgba(139, 92, 246, 0.4);
+    background: rgba(139, 92, 246, 0.05);
+    transition: all 0.2s ease;
+    animation: placeholder-pulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes placeholder-pulse {
+    from { border-color: rgba(139, 92, 246, 0.3); background: rgba(139, 92, 246, 0.04); }
+    to   { border-color: rgba(139, 92, 246, 0.6); background: rgba(139, 92, 246, 0.09); }
+}
+
+/* ==================================================
+   LOW-END / PERFORMANCE MODE
+   Applied via body.perf-mode
+   Kills: blur, animations, transitions, glow, hover lifts
+================================================== */
+
+/* Active state — button glows green to show it's ON */
+#perf-toggle.perf-active {
+    border-color: #10b981 !important;
+    color: #10b981 !important;
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
+}
+
+body.perf-mode *,
+body.perf-mode *::before,
+body.perf-mode *::after {
+    /* Kill ALL transitions and animations globally */
+    animation: none !important;
+    transition: none !important;
+    /* Remove all blur — biggest GPU hog */
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    /* Remove expensive filters */
+    filter: none !important;
+    /* Force GPU layers off */
+    will-change: auto !important;
+}
+
+/* Keep elements visible (load animations set opacity:0) */
+body.perf-mode .top-bar,
+body.perf-mode .hero-section,
+body.perf-mode .shortcuts-bar,
+body.perf-mode .widget-grid .widget {
+    opacity: 1 !important;
+    transform: none !important;
+}
+
+/* Kill the ambient glow blob entirely */
+body.perf-mode .ambient-bg {
+    display: none !important;
+}
+
+/* Kill hover lifts on cards */
+body.perf-mode .glass-card:hover {
+    transform: none !important;
+    box-shadow: var(--shadow) !important;
+}
+
+/* Kill button spin/scale on hover */
+body.perf-mode .glass-btn:hover {
+    transform: none !important;
+}
+
+/* Kill search bar scale on focus */
+body.perf-mode .search-container:focus-within {
+    transform: none !important;
+}
+
+/* Kill drag placeholder pulse */
+body.perf-mode .drag-placeholder {
+    animation: none !important;
+}
+
+/* Kill wallpaper overlay transition */
+body.perf-mode #wallpaper-overlay {
+    transition: none !important;
+}
+
+/* Simplify glass card bg so it's flat — no gradient overhead */
+body.perf-mode .glass-card {
+    background: var(--bg-secondary) !important;
+    border: 1px solid var(--glass-border) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+}
+
+/* Perf mode toast notification */
+.perf-toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 20, 40, 0.92);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #f8fafc;
+    padding: 12px 22px;
+    border-radius: 100px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.perf-toast.show {
+    opacity: 1;
 }
