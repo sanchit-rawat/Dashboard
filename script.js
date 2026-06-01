@@ -209,10 +209,17 @@ async function fetchWeatherByCity(city) {
 function initWeather() {
     const cityInput     = document.getElementById('city-input');
     const citySearchBtn = document.getElementById('city-search-btn');
-    const savedCity     = localStorage.getItem('dashboard-city') || 'Delhi';
+    const savedCity     = localStorage.getItem('dashboard-city');
 
-    cityInput.value = savedCity;
-    fetchWeatherByCity(savedCity);
+    if (savedCity) {
+        // Returning user — load their saved city
+        cityInput.value = savedCity;
+        fetchWeatherByCity(savedCity);
+    } else {
+        // New user — show empty state
+        document.querySelector('.temp').textContent = '--°C';
+        document.querySelector('.desc').textContent = 'Enter your city above ↑';
+    }
 
     citySearchBtn.addEventListener('click', () => {
         const city = cityInput.value.trim();
@@ -229,8 +236,8 @@ function initWeather() {
 
 initWeather();
 setInterval(() => {
-    const city = localStorage.getItem('dashboard-city') || 'Delhi';
-    fetchWeatherByCity(city);
+    const city = localStorage.getItem('dashboard-city');
+    if (city) fetchWeatherByCity(city);
 }, 600_000);
 
 // ─── CALENDAR WIDGET ──────────────────────────────────────
@@ -1031,14 +1038,19 @@ if ('serviceWorker' in navigator) {
 
     // Apply a playlist URL to the iframe
     function applyPlaylist(embedUrl) {
+        iframe.style.display = 'block';
         iframe.src = embedUrl;
         localStorage.setItem('dashboard-spotify', embedUrl);
     }
 
-    // Load saved playlist on startup
+    // Load saved playlist on startup — nothing for new users
     const saved = localStorage.getItem('dashboard-spotify');
     if (saved) {
         applyPlaylist(saved);
+    } else {
+        // New user — hide iframe, show prompt
+        iframe.style.display = 'none';
+        input.placeholder = 'Paste your Spotify playlist link to get started...';
     }
 
     // Handle button click
