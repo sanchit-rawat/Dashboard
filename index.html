@@ -22,6 +22,19 @@
 
 <body>
 
+    <!-- LOADING SCREEN -->
+    <div id="loader">
+        <div class="loader-content">
+            <div class="loader-logo">
+                <i class="fas fa-gauge-simple-high"></i>
+            </div>
+            <div class="loader-bar-wrap">
+                <div class="loader-bar"></div>
+            </div>
+            <p class="loader-text">Loading your dashboard...</p>
+        </div>
+    </div>
+
     <!-- Ambient Glow -->
     <div class="ambient-bg"></div>
     <div class="cursor-glow"></div>
@@ -403,6 +416,55 @@
                 </button>
             </div>
 
+        </div>
+    </div>
+
+    <!-- NEW USER WELCOME MODAL -->
+    <div id="welcome-overlay" class="welcome-overlay">
+        <div class="welcome-modal glass-card">
+            <div class="welcome-icon">👋</div>
+            <h2 class="welcome-title">Welcome to your Dashboard!</h2>
+            <p class="welcome-sub">Let's get you set up in a few seconds.</p>
+
+            <div class="welcome-steps">
+
+                <div class="welcome-step">
+                    <div class="step-icon"><i class="fas fa-cloud-sun"></i></div>
+                    <div class="step-info">
+                        <strong>Weather</strong>
+                        <span>Type your city in the weather widget to see live weather</span>
+                    </div>
+                </div>
+
+                <div class="welcome-step">
+                    <div class="step-icon"><i class="fab fa-spotify"></i></div>
+                    <div class="step-info">
+                        <strong>Music</strong>
+                        <span>Paste any Spotify playlist link in the music widget</span>
+                    </div>
+                </div>
+
+                <div class="welcome-step">
+                    <div class="step-icon"><i class="fas fa-cog"></i></div>
+                    <div class="step-info">
+                        <strong>Customize</strong>
+                        <span>Use the ⚙️ settings button to toggle widgets on/off</span>
+                    </div>
+                </div>
+
+                <div class="welcome-step">
+                    <div class="step-icon"><i class="fas fa-image"></i></div>
+                    <div class="step-info">
+                        <strong>Wallpaper</strong>
+                        <span>Click 🖼️ to set a custom background photo</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <button id="welcome-done" class="welcome-btn">
+                Let's go! 🚀
+            </button>
         </div>
     </div>
 
