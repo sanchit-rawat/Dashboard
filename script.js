@@ -3,6 +3,35 @@
  * Clock · Greeting · Search · Theme · Notes · Tasks · Weather · Wallpaper Picker
  */
 
+// ─── LOADING SCREEN ───────────────────────────────────────
+window.addEventListener('load', () => {
+    const loader = document.getElementById('loader');
+    // Wait for bar animation to finish then fade out
+    setTimeout(() => {
+        loader.classList.add('hidden');
+    }, 1800);
+});
+
+// ─── NEW USER WELCOME ─────────────────────────────────────
+(function () {
+    const isNewUser = !localStorage.getItem('dashboard-welcomed');
+    if (!isNewUser) return;
+
+    const overlay = document.getElementById('welcome-overlay');
+    const doneBtn = document.getElementById('welcome-done');
+    if (!overlay || !doneBtn) return;
+
+    // Show after loader finishes
+    setTimeout(() => {
+        overlay.classList.add('active');
+    }, 2000);
+
+    doneBtn.addEventListener('click', () => {
+        overlay.classList.remove('active');
+        localStorage.setItem('dashboard-welcomed', 'true');
+    });
+})();
+
 // ─── CONFIG ──────────────────────────────────────────────
 const WEATHER_API_KEY    = 'b0677d9c940a9b4a0ff25a852a0c18b1';
 const UNSPLASH_ACCESS_KEY = 'Pqb15MQf3mjxbeFMts0tYSc3W5La6qoS3uKETKr4m-A';
@@ -853,8 +882,31 @@ setInterval(() => {
 
     // ── Clear all data ──
     document.getElementById('settings-clear-data').addEventListener('click', () => {
-        if (!confirm('This will clear all notes, tasks, shortcuts, and saved settings. Continue?')) return;
+        if (!confirm('This will reset everything — notes, tasks, weather city, Spotify playlist, shortcuts, theme and all settings. You\'ll see a fresh dashboard. Continue?')) return;
+
+        // Clear every single key
+        const keysToRemove = [
+            'dashboard-notes',
+            'dashboard-tasks',
+            'dashboard-city',
+            'dashboard-spotify',
+            'dashboard-theme',
+            'dashboard-widgets',
+            'dashboard-perf',
+            'dashboard-wallpaper',
+            'dashboard-widget-order',
+            'dashboard-selected-date',
+            'dashboard-shortcuts',
+            'nexus-theme',
+            'nexus-notes',
+            'nexus-tasks',
+            'nexus-city',
+        ];
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+
+        // Full clear just in case anything was missed
         localStorage.clear();
+
         location.reload();
     });
 })();
