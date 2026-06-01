@@ -113,6 +113,75 @@ addTodoBtn.addEventListener('click', addTask);
 todoInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addTask(); });
 renderTasks();
 
+// ─── WEATHER DESCRIPTION MAP ──────────────────────────────
+const WEATHER_DESCRIPTIONS = {
+    // Clear
+    'clear sky'                : 'Sunny',
+    // Clouds
+    'few clouds'               : 'Mostly Sunny',
+    'scattered clouds'         : 'Partly Cloudy',
+    'broken clouds'            : 'Mostly Cloudy',
+    'overcast clouds'          : 'Cloudy',
+    // Drizzle
+    'light intensity drizzle'  : 'Light Drizzle',
+    'drizzle'                  : 'Drizzle',
+    'heavy intensity drizzle'  : 'Heavy Drizzle',
+    'light intensity drizzle rain' : 'Drizzle',
+    'drizzle rain'             : 'Drizzle & Rain',
+    'shower rain and drizzle'  : 'Showers',
+    // Rain
+    'light rain'               : 'Light Rain',
+    'moderate rain'            : 'Rain',
+    'heavy intensity rain'     : 'Heavy Rain',
+    'very heavy rain'          : 'Very Heavy Rain',
+    'extreme rain'             : 'Extreme Rain',
+    'freezing rain'            : 'Freezing Rain',
+    'light intensity shower rain' : 'Light Showers',
+    'shower rain'              : 'Showers',
+    'heavy intensity shower rain' : 'Heavy Showers',
+    'ragged shower rain'       : 'Scattered Showers',
+    // Thunderstorm
+    'thunderstorm with light rain'   : 'Thunderstorm',
+    'thunderstorm with rain'         : 'Thunderstorm',
+    'thunderstorm with heavy rain'   : 'Heavy Thunderstorm',
+    'light thunderstorm'             : 'Light Thunderstorm',
+    'thunderstorm'                   : 'Thunderstorm',
+    'heavy thunderstorm'             : 'Heavy Thunderstorm',
+    'ragged thunderstorm'            : 'Severe Thunderstorm',
+    'thunderstorm with light drizzle': 'Thunderstorm',
+    'thunderstorm with drizzle'      : 'Thunderstorm',
+    'thunderstorm with heavy drizzle': 'Heavy Thunderstorm',
+    // Snow
+    'light snow'               : 'Light Snow',
+    'snow'                     : 'Snow',
+    'heavy snow'               : 'Heavy Snow',
+    'sleet'                    : 'Sleet',
+    'light shower sleet'       : 'Light Sleet',
+    'shower sleet'             : 'Sleet',
+    'light rain and snow'      : 'Rain & Snow',
+    'rain and snow'            : 'Rain & Snow',
+    'light shower snow'        : 'Light Snow Showers',
+    'shower snow'              : 'Snow Showers',
+    'heavy shower snow'        : 'Heavy Snow Showers',
+    // Atmosphere
+    'mist'                     : 'Misty',
+    'smoke'                    : 'Smoky',
+    'haze'                     : 'Hazy',
+    'sand/dust whirls'         : 'Dusty',
+    'fog'                      : 'Foggy',
+    'sand'                     : 'Sandy',
+    'dust'                     : 'Dusty',
+    'volcanic ash'             : 'Volcanic Ash',
+    'squalls'                  : 'Windy Squalls',
+    'tornado'                  : 'Tornado',
+};
+
+function friendlyDesc(raw) {
+    return WEATHER_DESCRIPTIONS[raw.toLowerCase()] || 
+           // Capitalize first letter as fallback
+           raw.charAt(0).toUpperCase() + raw.slice(1);
+}
+
 // ─── WEATHER BY CITY ──────────────────────────────────────
 async function fetchWeatherByCity(city) {
     const tempEl = document.querySelector('.temp');
@@ -127,8 +196,9 @@ async function fetchWeatherByCity(city) {
         if (!res.ok)            throw new Error('Weather unavailable');
 
         const data = await res.json();
+        const desc = friendlyDesc(data.weather[0].description);
         tempEl.textContent = `${Math.round(data.main.temp)}°C`;
-        descEl.textContent = `${data.name}, ${data.sys.country} · ${data.weather[0].description}`;
+        descEl.textContent = `${data.name}, ${data.sys.country} · ${desc}`;
         localStorage.setItem('dashboard-city', city);
     } catch (err) {
         tempEl.textContent = '--°C';
@@ -229,20 +299,25 @@ setInterval(() => {
     const floatingPanel = document.getElementById('floating-calendar-panel');
     if (!floatingPanel) return;
 
-    let panelHovered = false;
+    const calBtn = document.getElementById('calendar-btn');
 
-    window.addEventListener('mousemove', (e) => {
-        if (e.clientX <= 50) {
-            floatingPanel.classList.add('visible');
-        } else if (e.clientX > 240 && !panelHovered) {
-            floatingPanel.classList.remove('visible');
-        }
+    // Stop ALL clicks inside the panel from bubbling to document
+    floatingPanel.addEventListener('click', (e) => {
+        e.stopPropagation();
     });
 
-    floatingPanel.addEventListener('mouseenter', () => { panelHovered = true; });
-    floatingPanel.addEventListener('mouseleave', () => {
-        panelHovered = false;
+    // Toggle calendar on button click
+    calBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = floatingPanel.classList.contains('visible');
+        floatingPanel.classList.toggle('visible', !isOpen);
+        calBtn.classList.toggle('cal-active', !isOpen);
+    });
+
+    // Only close when clicking truly outside
+    document.addEventListener('click', () => {
         floatingPanel.classList.remove('visible');
+        calBtn.classList.remove('cal-active');
     });
 })();
 
@@ -926,5 +1001,62 @@ if ('serviceWorker' in navigator) {
             perfBtn.title = 'Low-end mode (optimize performance)';
             showToast('Low-end mode OFF — animations restored', 'fa-wand-magic-sparkles');
         }
+    });
+})();
+
+// ─── CUSTOM SPOTIFY PLAYLIST ──────────────────────────────
+(function () {
+    const iframe    = document.getElementById('spotify-iframe');
+    const input     = document.getElementById('spotify-url-input');
+    const btn       = document.getElementById('spotify-set-btn');
+    if (!iframe || !input || !btn) return;
+
+    const DEFAULT = 'https://open.spotify.com/embed/playlist/33f6SkybskktunLAWRpSAe?utm_source=generator';
+
+    // Extract Spotify embed URL from any Spotify link the user pastes
+    function toEmbedUrl(raw) {
+        try {
+            const url = new URL(raw.trim());
+
+            // Already an embed link — use as-is
+            if (url.pathname.startsWith('/embed/')) return raw.trim();
+
+            // e.g. /playlist/37i9dQZF1DX... → /embed/playlist/37i9dQZF1DX...
+            const embedPath = '/embed' + url.pathname;
+            return `https://open.spotify.com${embedPath}?utm_source=generator`;
+        } catch {
+            return null;
+        }
+    }
+
+    // Apply a playlist URL to the iframe
+    function applyPlaylist(embedUrl) {
+        iframe.src = embedUrl;
+        localStorage.setItem('dashboard-spotify', embedUrl);
+    }
+
+    // Load saved playlist on startup
+    const saved = localStorage.getItem('dashboard-spotify');
+    if (saved) {
+        applyPlaylist(saved);
+    }
+
+    // Handle button click
+    btn.addEventListener('click', () => {
+        const embedUrl = toEmbedUrl(input.value);
+        if (!embedUrl) {
+            input.style.borderColor = '#f87171';
+            setTimeout(() => input.style.borderColor = '', 1500);
+            return;
+        }
+        applyPlaylist(embedUrl);
+        input.value = '';
+        input.placeholder = 'Playlist updated! ✓';
+        setTimeout(() => input.placeholder = 'Paste your Spotify playlist link...', 3000);
+    });
+
+    // Handle Enter key
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') btn.click();
     });
 })();
