@@ -62,9 +62,47 @@
                 <button id="theme-toggle" class="glass-btn" aria-label="Toggle Theme">
                     <i class="fas fa-moon"></i>
                 </button>
-                <button id="perf-toggle" class="glass-btn" title="Low-end mode (optimize performance)" aria-label="Toggle Performance Mode">
-                    <i class="fas fa-gauge-high"></i>
-                </button>
+
+                <!-- OPTIMIZATION MODE -->
+                <div class="perf-wrap">
+                    <button id="perf-toggle" class="glass-btn" title="Optimization mode" aria-label="Optimization Mode">
+                        <i class="fas fa-gauge-high"></i>
+                    </button>
+                    <div id="perf-dropdown" class="perf-dropdown">
+                        <p class="perf-dropdown-label">Optimization Mode</p>
+                        <button class="perf-option" data-level="min">
+                            <div class="perf-option-left">
+                                <i class="fas fa-gauge-simple-high"></i>
+                                <div>
+                                    <strong>Minimum</strong>
+                                    <span>Full effects, slight optimization</span>
+                                </div>
+                            </div>
+                            <span class="perf-check"><i class="fas fa-check"></i></span>
+                        </button>
+                        <button class="perf-option" data-level="medium">
+                            <div class="perf-option-left">
+                                <i class="fas fa-gauge"></i>
+                                <div>
+                                    <strong>Medium</strong>
+                                    <span>Balanced — default</span>
+                                </div>
+                            </div>
+                            <span class="perf-check"><i class="fas fa-check"></i></span>
+                        </button>
+                        <button class="perf-option" data-level="high">
+                            <div class="perf-option-left">
+                                <i class="fas fa-gauge-simple"></i>
+                                <div>
+                                    <strong>Maximum</strong>
+                                    <span>No blur, no animations, smoothest</span>
+                                </div>
+                            </div>
+                            <span class="perf-check"><i class="fas fa-check"></i></span>
+                        </button>
+                    </div>
+                </div>
+
                 <button id="settings-btn" class="glass-btn" title="Settings" aria-label="Open Settings">
                     <i class="fas fa-cog"></i>
                 </button>
