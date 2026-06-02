@@ -2065,3 +2065,225 @@ body.perf-mode .glass-card {
     transform: scale(1.02);
     background: #7c3aed;
 }
+
+/* ==================================================
+   MOBILE — REMOVE BLUR ONLY (keep all other effects)
+   Blur is the #1 GPU killer on phones
+================================================== */
+@media (max-width: 768px) {
+    .glass-card,
+    .glass-btn,
+    .search-container,
+    .floating-calendar-card,
+    .settings-panel,
+    .welcome-modal,
+    .shortcut-modal-inner,
+    .wallpaper-modal,
+    #loader {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    /* Slightly stronger bg so cards still look solid without blur */
+    .glass-card {
+        background: rgba(15, 18, 35, 0.92) !important;
+    }
+
+    .search-container {
+        background: rgba(15, 18, 35, 0.88) !important;
+    }
+
+    .glass-btn {
+        background: rgba(15, 18, 35, 0.88) !important;
+    }
+
+    /* Reduce animation complexity on mobile */
+    .ambient-bg {
+        display: none !important;
+    }
+
+    /* Keep hover lifts but reduce intensity */
+    .glass-card:hover {
+        transform: translateY(-4px) !important;
+    }
+}
+
+/* ==================================================
+   MOBILE — USER OVERRIDES OPTIMIZATION (high-end phone)
+   Applied when user manually turns OFF perf mode on mobile
+================================================== */
+body.perf-override .glass-card,
+body.perf-override .glass-btn,
+body.perf-override .search-container,
+body.perf-override .floating-calendar-card,
+body.perf-override .settings-panel,
+body.perf-override .welcome-modal {
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+}
+
+body.perf-override .glass-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)) !important;
+}
+
+body.perf-override .ambient-bg {
+    display: block !important;
+}
+
+body.perf-override .glass-card:hover {
+    transform: translateY(-10px) !important;
+}
+
+/* ==================================================
+   OPTIMIZATION MODE — 3 LEVELS
+================================================== */
+
+/* Wrapper for button + dropdown */
+.perf-wrap {
+    position: relative;
+}
+
+/* Dropdown panel */
+.perf-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 270px;
+    background: rgba(10, 12, 28, 0.96);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 18px;
+    padding: 14px;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px) scale(0.97);
+    transform-origin: top right;
+    transition: all 0.25s cubic-bezier(0.22,1,0.36,1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+}
+
+.perf-dropdown.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+.perf-dropdown-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    padding: 0 4px;
+    margin-bottom: 4px;
+}
+
+/* Each option row */
+.perf-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 12px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    background: rgba(255,255,255,0.04);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    text-align: left;
+    color: var(--text-main);
+}
+
+.perf-option:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.08);
+}
+
+.perf-option.active {
+    background: rgba(139,92,246,0.15);
+    border-color: rgba(139,92,246,0.35);
+}
+
+.perf-option-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.perf-option-left i {
+    color: var(--accent);
+    font-size: 1rem;
+    width: 18px;
+    text-align: center;
+}
+
+.perf-option-left div {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.perf-option-left strong {
+    font-size: 0.88rem;
+    color: var(--text-main);
+}
+
+.perf-option-left span {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.perf-check {
+    font-size: 0.75rem;
+    color: var(--accent);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.perf-option.active .perf-check {
+    opacity: 1;
+}
+
+/* Button color per active level */
+#perf-toggle.level-min    { border-color: #4ade80; color: #4ade80; box-shadow: 0 0 10px rgba(74,222,128,0.25); }
+#perf-toggle.level-medium { border-color: #facc15; color: #facc15; box-shadow: 0 0 10px rgba(250,204,21,0.25); }
+#perf-toggle.level-high   { border-color: #f87171; color: #f87171; box-shadow: 0 0 10px rgba(248,113,113,0.25); }
+
+/* ── LEVEL: MINIMUM (just reduce hover lift + keep everything else) ── */
+body.perf-min .glass-card:hover   { transform: translateY(-5px) !important; }
+body.perf-min .ambient-bg         { animation-duration: 30s !important; }
+
+/* ── LEVEL: MEDIUM (default — remove mobile blur, reduce animations) ── */
+body.perf-medium .ambient-bg      { filter: blur(60px) !important; opacity: 0.8; }
+body.perf-medium .glass-card:hover { transform: translateY(-6px) !important; }
+body.perf-medium .glass-card,
+body.perf-medium .glass-btn,
+body.perf-medium .search-container {
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+}
+
+/* ── LEVEL: HIGH (maximum smoothness — kill everything heavy) ── */
+body.perf-high *,
+body.perf-high *::before,
+body.perf-high *::after {
+    animation: none !important;
+    transition: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    filter: none !important;
+    will-change: auto !important;
+}
+
+body.perf-high .top-bar,
+body.perf-high .hero-section,
+body.perf-high .shortcuts-bar,
+body.perf-high .widget-grid .widget { opacity: 1 !important; transform: none !important; }
+body.perf-high .ambient-bg          { display: none !important; }
+body.perf-high .glass-card:hover    { transform: none !important; box-shadow: var(--shadow) !important; }
+body.perf-high .glass-card          { background: var(--bg-secondary) !important; }
