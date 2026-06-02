@@ -106,12 +106,20 @@ function renderTasks() {
     todoList.innerHTML = '';
     tasks.forEach((task, index) => {
         const li = document.createElement('li');
-        li.innerHTML = `
-            <span>${escapeHtml(task)}</span>
-            <button class="delete-btn" onclick="deleteTask(${index})">
-                <i class="fas fa-trash"></i>
-            </button>
-        `;
+
+        const span = document.createElement('span');
+        span.textContent = task;
+
+        const btn = document.createElement('button');
+        btn.className = 'delete-btn';
+        btn.innerHTML = '<i class="fas fa-trash"></i>';
+        btn.addEventListener('click', () => {
+            tasks.splice(index, 1);
+            renderTasks();
+        });
+
+        li.appendChild(span);
+        li.appendChild(btn);
         todoList.appendChild(li);
     });
     localStorage.setItem('dashboard-tasks', JSON.stringify(tasks));
@@ -124,11 +132,6 @@ function addTask() {
     todoInput.value = '';
     renderTasks();
 }
-
-window.deleteTask = (index) => {
-    tasks.splice(index, 1);
-    renderTasks();
-};
 
 function escapeHtml(str) {
     return str
@@ -1017,10 +1020,18 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// ─── PERFORMANCE / LOW-END MODE ───────────────────────────
+// ─── OPTIMIZATION MODE — 3 LEVELS ────────────────────────
 (function () {
-    const perfBtn   = document.getElementById('perf-toggle');
-    if (!perfBtn) return;
+    const perfBtn    = document.getElementById('perf-toggle');
+    const dropdown   = document.getElementById('perf-dropdown');
+    const options    = document.querySelectorAll('.perf-option');
+    if (!perfBtn || !dropdown) return;
+
+    const LEVELS = {
+        min:    { label: 'Minimum',  icon: 'fa-gauge-simple-high', toast: 'Minimum optimization — full effects ✨' },
+        medium: { label: 'Medium',   icon: 'fa-gauge',             toast: 'Medium optimization — balanced ⚡' },
+        high:   { label: 'Maximum',  icon: 'fa-gauge-simple',      toast: 'Maximum optimization — smoothest 🚀' },
+    };
 
     // Toast helper
     function showToast(msg, icon = 'fa-gauge-high') {
@@ -1037,30 +1048,53 @@ if ('serviceWorker' in navigator) {
         toast._timer = setTimeout(() => toast.classList.remove('show'), 2800);
     }
 
-    // Apply saved state on load
-    const isPerf = localStorage.getItem('dashboard-perf') === 'true';
-    if (isPerf) {
-        document.body.classList.add('perf-mode');
-        perfBtn.classList.add('perf-active');
-        perfBtn.title = 'Performance mode ON — click to disable';
+    // Apply a level to body and button
+    function applyLevel(level) {
+        // Remove all level classes
+        document.body.classList.remove('perf-min', 'perf-medium', 'perf-high');
+        perfBtn.classList.remove('level-min', 'level-medium', 'level-high');
+
+        // Apply new level
+        document.body.classList.add(`perf-${level}`);
+        perfBtn.classList.add(`level-${level}`);
+
+        // Update active option in dropdown
+        options.forEach(opt => {
+            opt.classList.toggle('active', opt.dataset.level === level);
+        });
+
+        // Save
+        localStorage.setItem('dashboard-opt-level', level);
     }
 
-    // Toggle on click
-    perfBtn.addEventListener('click', () => {
-        const enabling = !document.body.classList.contains('perf-mode');
+    // Load saved level — desktop default is none, mobile default is medium
+    const isMobile = window.innerWidth <= 768 ||
+                     /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    const defaultLevel = isMobile ? 'medium' : null;
+    const saved = localStorage.getItem('dashboard-opt-level') || defaultLevel;
 
-        document.body.classList.toggle('perf-mode', enabling);
-        perfBtn.classList.toggle('perf-active', enabling);
-        localStorage.setItem('dashboard-perf', enabling);
+    if (saved) applyLevel(saved);
 
-        if (enabling) {
-            perfBtn.title = 'Performance mode ON — click to disable';
-            showToast('Low-end mode ON — animations disabled', 'fa-gauge-high');
-        } else {
-            perfBtn.title = 'Low-end mode (optimize performance)';
-            showToast('Low-end mode OFF — animations restored', 'fa-wand-magic-sparkles');
-        }
+    // Toggle dropdown open/close
+    perfBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
     });
+
+    // Option click
+    options.forEach(opt => {
+        opt.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const level = opt.dataset.level;
+            applyLevel(level);
+            dropdown.classList.remove('open');
+            showToast(LEVELS[level].toast, LEVELS[level].icon);
+        });
+    });
+
+    // Close on outside click
+    document.addEventListener('click', () => dropdown.classList.remove('open'));
+    dropdown.addEventListener('click', e => e.stopPropagation());
 })();
 
 // ─── CUSTOM SPOTIFY PLAYLIST ──────────────────────────────
