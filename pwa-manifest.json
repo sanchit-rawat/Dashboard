@@ -1,20 +1,30 @@
 {
-  "name": "Aesthetic Dashboard",
-  "short_name": "Dashboard",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#050816",
-  "theme_color": "#8b5cf6",
-  "icons": [
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
+    "manifest_version": 3,
+    "name": "Aesthetic Dashboard",
+    "description": "A beautiful glassmorphism new tab dashboard with time tracking.",
+    "version": "2.0",
+
+    "chrome_url_overrides": {
+        "newtab": "index.html"
     },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
+
+    "background": {
+        "service_worker": "background.js"
+    },
+
+    "permissions": [
+        "storage",
+        "tabs",
+        "alarms"
+    ],
+
+    "host_permissions": [
+        "<all_urls>"
+    ],
+
+    "icons": {
+        "16":  "icon-192.png",
+        "48":  "icon-192.png",
+        "128": "icon-512.png"
     }
-  ]
 }
