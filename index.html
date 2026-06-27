@@ -14,21 +14,17 @@
 </head>
 <body>
 
-    <!-- LOADING SCREEN -->
-    <div id="loader">
-        <div class="loader-content">
-            <div class="loader-logo"><i class="fas fa-gauge-simple-high"></i></div>
-            <div class="loader-bar-wrap"><div class="loader-bar"></div></div>
-            <p class="loader-text">Loading your dashboard...</p>
-        </div>
-    </div>
-
     <!-- Ambient Glow -->
     <div class="ambient-bg"></div>
     <div class="cursor-glow"></div>
 
     <!-- WALLPAPER OVERLAY -->
     <div id="wallpaper-overlay"></div>
+
+    <!-- VIDEO BACKGROUND -->
+    <video id="video-bg" autoplay muted loop playsinline
+        style="display:none; position:fixed; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; pointer-events:none;">
+    </video>
 
     <!-- MAIN DASHBOARD -->
     <div class="dashboard-container">
@@ -41,6 +37,9 @@
                 </button>
             </div>
             <div class="top-bar-right">
+                <button id="tracker-btn" class="glass-btn" title="Time Tracker" aria-label="Time Tracker">
+                    <i class="fas fa-chart-bar"></i>
+                </button>
                 <button id="wallpaper-btn" class="glass-btn" title="Change wallpaper" aria-label="Change Wallpaper">
                     <i class="fas fa-image"></i>
                 </button>
@@ -120,15 +119,32 @@
 
             <div class="widget glass-card" data-id="spotify">
                 <div class="drag-handle" title="Drag to reorder"><i class="fas fa-grip-vertical"></i></div>
-                <h3><i class="fab fa-spotify"></i> Chill Music</h3>
-                <iframe id="spotify-iframe" title="Spotify Music Player"
-                    style="border-radius:16px; display:none;" src=""
-                    width="100%" height="352" frameBorder="0"
+                <h3><i class="fas fa-music"></i> Music Player</h3>
+
+                <!-- Player tabs -->
+                <div class="music-tabs">
+                    <button class="music-tab active" data-player="spotify">
+                        <i class="fab fa-spotify"></i> Spotify
+                    </button>
+                    <button class="music-tab" data-player="youtube">
+                        <i class="fab fa-youtube"></i> YouTube
+                    </button>
+                    <button class="music-tab" data-player="ytmusic">
+                        <i class="fas fa-headphones"></i> YT Music
+                    </button>
+                </div>
+
+                <!-- Single iframe for all players -->
+                <iframe id="music-iframe" title="Music Player"
+                    style="border-radius:16px; display:none;"
+                    src="" width="100%" height="352" frameBorder="0"
                     allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                     loading="lazy"></iframe>
-                <div class="spotify-input-group">
-                    <input type="text" id="spotify-url-input" placeholder="Paste your Spotify playlist link to get started..." />
-                    <button id="spotify-set-btn" aria-label="Set playlist"><i class="fas fa-arrow-right"></i></button>
+
+                <!-- Input group -->
+                <div class="music-input-group">
+                    <input type="text" id="music-url-input" placeholder="Paste your Spotify playlist link..." />
+                    <button id="music-set-btn" aria-label="Set player"><i class="fas fa-arrow-right"></i></button>
                 </div>
             </div>
 
@@ -243,6 +259,7 @@
             <div class="wp-tabs">
                 <button class="wp-tab active" data-tab="gradients">Gradients</button>
                 <button class="wp-tab" data-tab="unsplash">Photos</button>
+                <button class="wp-tab" data-tab="upload">Upload</button>
             </div>
             <div class="wp-panel" id="tab-gradients">
                 <div class="gradient-grid" id="gradient-grid"></div>
@@ -256,6 +273,28 @@
                 <div id="unsplash-grid" class="unsplash-grid">
                     <p class="wp-hint">Search for a photo above ↑</p>
                 </div>
+            </div>
+            <div class="wp-panel hidden" id="tab-upload">
+                <div class="upload-area" id="upload-area">
+                    <div class="upload-drop-zone" id="upload-drop-zone">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Drag & drop here</p>
+                        <span>or</span>
+                    </div>
+                    <div class="upload-btns">
+                        <label class="upload-btn" for="upload-image-input">
+                            <i class="fas fa-image"></i> Upload Photo
+                            <input type="file" id="upload-image-input" accept="image/*" hidden>
+                        </label>
+                        <label class="upload-btn upload-btn-video" for="upload-video-input">
+                            <i class="fas fa-film"></i> Upload Video
+                            <input type="file" id="upload-video-input" accept="video/mp4,video/webm" hidden>
+                        </label>
+                    </div>
+                    <p class="upload-hint">JPG, PNG, GIF, MP4, WebM supported</p>
+                    <div id="upload-preview" class="upload-preview hidden"></div>
+                </div>
+                <button id="clear-wallpaper-upload" class="wp-clear-btn" style="margin-top:12px"><i class="fas fa-ban"></i> Remove wallpaper</button>
             </div>
         </div>
     </div>
@@ -335,6 +374,49 @@
             </div>
         </div>
     </div>
+
+    <!-- TIME TRACKER SIDEBAR -->
+    <div id="tracker-sidebar" class="tracker-sidebar">
+        <div class="tracker-header">
+            <h2><i class="fas fa-chart-bar"></i> Time Tracker</h2>
+            <div class="tracker-header-right">
+                <select id="tracker-date-select" class="tracker-date-select"></select>
+                <button id="tracker-close" class="glass-btn small-btn"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="tracker-stats">
+            <div class="tracker-stat">
+                <i class="fas fa-clock"></i>
+                <div>
+                    <span id="tracker-total">0m</span>
+                    <small>Today</small>
+                </div>
+            </div>
+            <div class="tracker-stat">
+                <i class="fas fa-fire"></i>
+                <div>
+                    <span id="tracker-streak">0</span>
+                    <small>Day streak</small>
+                </div>
+            </div>
+            <div class="tracker-stat">
+                <i class="fas fa-globe"></i>
+                <div>
+                    <span id="tracker-sites">0</span>
+                    <small>Sites visited</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Site list -->
+        <div class="tracker-section-title">Top Sites</div>
+        <div id="tracker-list" class="tracker-list">
+            <p class="tracker-empty">No data yet. Browse around and come back!</p>
+        </div>
+    </div>
+    <div id="tracker-overlay" class="tracker-overlay"></div>
 
     <script src="script.js"></script>
 </body>
