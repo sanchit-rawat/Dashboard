@@ -1661,25 +1661,6 @@ body.has-wallpaper .ambient-bg {
     to   { border-color: rgba(139, 92, 246, 0.6); background: rgba(139, 92, 246, 0.09); }
 }
 /* ==================================================
-   LOADING SCREEN
-================================================== */
-#loader {
-    position: fixed; inset: 0;
-    background: var(--bg-main);
-    z-index: 9999;
-    display: flex; align-items: center; justify-content: center;
-    transition: opacity 0.5s ease, visibility 0.5s ease;
-}
-#loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-.loader-content { display: flex; flex-direction: column; align-items: center; gap: 20px; }
-.loader-logo { font-size: 2.5rem; color: var(--accent); animation: loader-pulse 1.2s ease-in-out infinite; }
-@keyframes loader-pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.2);opacity:0.6} }
-.loader-bar-wrap { width: 180px; height: 3px; background: rgba(255,255,255,0.1); border-radius: 100px; overflow: hidden; }
-.loader-bar { height: 100%; width: 0%; background: var(--accent); border-radius: 100px; animation: loader-fill 1.8s cubic-bezier(0.4,0,0.2,1) forwards; }
-@keyframes loader-fill { 0%{width:0%} 60%{width:80%} 100%{width:100%} }
-.loader-text { font-size: 0.85rem; color: var(--text-muted); letter-spacing: 0.05em; }
-
-/* ==================================================
    TOP BAR layout
 ================================================== */
 .top-bar {
@@ -1956,4 +1937,480 @@ body.perf-high .search-container:focus-within { transform: none !important; box-
 .spotify-input-group button:hover {
     transform: scale(1.08);
     background: #17a348;
+}
+
+/* ==================================================
+   UPLOAD TAB — Custom Photo & Video Wallpaper
+================================================== */
+.upload-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.upload-drop-zone {
+    width: 100%;
+    padding: 32px;
+    border: 2px dashed rgba(255,255,255,0.15);
+    border-radius: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+    background: rgba(255,255,255,0.03);
+}
+
+.upload-drop-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(139,92,246,0.08);
+    color: var(--accent);
+}
+
+.upload-drop-zone i {
+    font-size: 2rem;
+    opacity: 0.6;
+}
+
+.upload-drop-zone p {
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.upload-drop-zone span {
+    font-size: 0.8rem;
+    opacity: 0.5;
+}
+
+.upload-btns {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.upload-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.06);
+    color: var(--text-main);
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.upload-btn:hover {
+    background: rgba(139,92,246,0.15);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.upload-btn-video:hover {
+    background: rgba(239,68,68,0.12);
+    border-color: #f87171;
+    color: #f87171;
+}
+
+.upload-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    opacity: 0.6;
+}
+
+.upload-preview {
+    width: 100%;
+    border-radius: 14px;
+    overflow: hidden;
+    max-height: 160px;
+    border: 1px solid rgba(255,255,255,0.1);
+    position: relative;
+}
+
+.upload-preview img,
+.upload-preview video {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    display: block;
+}
+
+.upload-preview-label {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 6px 10px;
+    background: rgba(0,0,0,0.5);
+    font-size: 0.75rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ==================================================
+   MUSIC PLAYER WIDGET — Multi-service tabs
+================================================== */
+.music-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    background: rgba(255,255,255,0.04);
+    padding: 5px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.07);
+}
+
+.music-tab {
+    flex: 1;
+    padding: 8px 6px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.music-tab:hover {
+    background: rgba(255,255,255,0.07);
+    color: var(--text-main);
+}
+
+.music-tab.active[data-player="spotify"] {
+    background: #1db954;
+    color: white;
+    box-shadow: 0 4px 12px rgba(29,185,84,0.4);
+}
+
+.music-tab.active[data-player="youtube"] {
+    background: #ff0000;
+    color: white;
+    box-shadow: 0 4px 12px rgba(255,0,0,0.4);
+}
+
+.music-tab.active[data-player="ytmusic"] {
+    background: #ff4e45;
+    color: white;
+    box-shadow: 0 4px 12px rgba(255,78,69,0.4);
+}
+
+.music-input-group {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.music-input-group input {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.06);
+    color: var(--text-main);
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.music-input-group input:focus {
+    border-color: var(--accent);
+    background: rgba(255,255,255,0.09);
+}
+
+.music-input-group input::placeholder { color: var(--text-muted); }
+
+.music-input-group button {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    border: none;
+    background: var(--accent);
+    color: white;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 0.85rem;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.music-input-group button:hover {
+    transform: scale(1.08);
+    background: var(--accent-dark);
+}
+
+/* ==================================================
+   TIME TRACKER SIDEBAR
+================================================== */
+.tracker-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.tracker-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.tracker-sidebar {
+    position: fixed;
+    top: 0;
+    right: -420px;
+    width: 380px;
+    max-width: 92vw;
+    height: 100vh;
+    background: rgba(10, 10, 28, 0.97);
+    border-left: 1px solid rgba(255,255,255,0.1);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    z-index: 201;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    transition: right 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    overflow: hidden;
+}
+
+.tracker-sidebar.open {
+    right: 0;
+}
+
+.tracker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 20px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+}
+
+.tracker-header h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-main);
+}
+
+.tracker-header h2 i { color: var(--accent); }
+
+.tracker-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tracker-date-select {
+    padding: 6px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.06);
+    color: var(--text-main);
+    font-size: 0.78rem;
+    outline: none;
+    cursor: pointer;
+}
+
+/* Stats row */
+.tracker-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: rgba(255,255,255,0.06);
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+}
+
+.tracker-stat {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 14px;
+    background: rgba(10,10,28,0.97);
+}
+
+.tracker-stat i {
+    color: var(--accent);
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.tracker-stat div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.tracker-stat span {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    line-height: 1;
+}
+
+.tracker-stat small {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+}
+
+/* Section title */
+.tracker-section-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 14px 20px 8px;
+    flex-shrink: 0;
+}
+
+/* Site list */
+.tracker-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 12px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tracker-empty {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    padding: 40px 20px;
+    line-height: 1.6;
+}
+
+.tracker-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    transition: background 0.2s ease;
+}
+
+.tracker-item:hover {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.1);
+}
+
+.tracker-item-rank {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    width: 16px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.tracker-favicon {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    object-fit: cover;
+}
+
+.tracker-favicon-fallback {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    background: rgba(139,92,246,0.2);
+    display: grid;
+    place-items: center;
+    font-size: 0.6rem;
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.tracker-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.tracker-item-host {
+    font-size: 0.85rem;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tracker-item-bar-wrap {
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 100px;
+    margin-top: 5px;
+    overflow: hidden;
+}
+
+.tracker-item-bar {
+    height: 100%;
+    border-radius: 100px;
+    background: var(--accent);
+    transition: width 0.6s ease;
+}
+
+.tracker-item-time {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Tracker button active */
+#tracker-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 12px rgba(139,92,246,0.3);
+}
+
+[data-theme="light"] .tracker-sidebar {
+    background: rgba(240, 242, 250, 0.98);
+    border-left-color: rgba(0,0,0,0.1);
+}
+
+[data-theme="light"] .tracker-stat {
+    background: rgba(240,242,250,0.98);
+}
+
+/* Video mute toggle button */
+.video-mute-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 50;
+    background: rgba(0,0,0,0.5) !important;
+    border-color: rgba(255,255,255,0.2) !important;
+    display: none;
+}
+
+.video-mute-btn:hover {
+    background: rgba(0,0,0,0.7) !important;
+    border-color: var(--accent) !important;
 }
