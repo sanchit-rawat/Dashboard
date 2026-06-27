@@ -1,0 +1,5 @@
+"background": {
+    "service_worker": "background.js"
+},
+"permissions": ["storage", "tabs", "alarms"],
+"host_permissions": ["<all_urls>"]
