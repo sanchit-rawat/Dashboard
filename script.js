@@ -2,12 +2,21 @@
  * AESTHETIC DASHBOARD — script.js
  */
 
-// ─── LOADING SCREEN ───────────────────────────────────────
-window.addEventListener('load', () => {
-    setTimeout(() => document.getElementById('loader').classList.add('hidden'), 1800);
-});
-
 // ─── WELCOME (new users only) ─────────────────────────────
+// Skip animations in Chrome extension to prevent blank flash
+if (location.protocol === 'chrome-extension:') {
+    document.documentElement.style.setProperty('--anim-duration', '0s');
+    const style = document.createElement('style');
+    style.textContent = `
+        .top-bar, .hero-section, .shortcuts-bar,
+        .widget-grid .widget, .ambient-bg {
+            opacity: 1 !important;
+            animation: none !important;
+            transform: none !important;
+        }
+    `;
+    document.head.appendChild(style);
+}
 (function () {
     if (localStorage.getItem('dashboard-welcomed')) return;
     const overlay = document.getElementById('welcome-overlay');
@@ -424,16 +433,37 @@ setInterval(() => { const c = lsGet('dashboard-city', null); if (c) fetchWeather
     });
 
     function applyWallpaper(wp) {
-        if (wp.type === 'gradient') { overlay.style.background = wp.value; }
-        else { overlay.style.background = `url('${wp.value}') center/cover no-repeat`; }
+        // Hide video bg by default
+        const videoBg = document.getElementById('video-bg');
+        videoBg.style.display = 'none';
+        videoBg.src = '';
+
+        if (wp.type === 'gradient') {
+            overlay.style.background = wp.value;
+        } else if (wp.type === 'photo') {
+            overlay.style.background = `url('${wp.value}') center/cover no-repeat`;
+        } else if (wp.type === 'upload-image') {
+            overlay.style.background = `url('${wp.value}') center/cover no-repeat`;
+        } else if (wp.type === 'upload-video') {
+            overlay.style.background = '';
+            videoBg.src = wp.value;
+            videoBg.style.display = 'block';
+        }
         document.body.classList.add('has-wallpaper');
-        lsSet('dashboard-wallpaper', wp);
+        // Don't save video to localStorage (too large) — only save type flag
+        if (wp.type !== 'upload-video' && wp.type !== 'upload-image') {
+            lsSet('dashboard-wallpaper', wp);
+        } else {
+            lsSet('dashboard-wallpaper', { type: wp.type, value: wp.value });
+        }
     }
 
     function clearWallpaper() {
         overlay.style.background = '';
         document.body.classList.remove('has-wallpaper');
         localStorage.removeItem('dashboard-wallpaper');
+        const videoBg = document.getElementById('video-bg');
+        if (videoBg) { videoBg.style.display = 'none'; videoBg.src = ''; }
     }
 
     const saved = lsGet('dashboard-wallpaper', null);
@@ -448,6 +478,10 @@ setInterval(() => { const c = lsGet('dashboard-city', null); if (c) fetchWeather
     modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
+    // Clear button in upload tab
+    const clearUploadBtn = document.getElementById('clear-wallpaper-upload');
+    if (clearUploadBtn) clearUploadBtn.addEventListener('click', () => { clearWallpaper(); closeModal(); });
+
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             tabs.forEach(t => t.classList.remove('active'));
@@ -456,6 +490,53 @@ setInterval(() => { const c = lsGet('dashboard-city', null); if (c) fetchWeather
             document.getElementById('tab-' + tab.dataset.tab).classList.remove('hidden');
         });
     });
+
+    // ── Upload tab ──
+    const dropZone      = document.getElementById('upload-drop-zone');
+    const imageInput    = document.getElementById('upload-image-input');
+    const videoInput    = document.getElementById('upload-video-input');
+    const uploadPreview = document.getElementById('upload-preview');
+
+    function handleUploadedFile(file) {
+        if (!file) return;
+        const isVideo = file.type.startsWith('video/');
+        const isImage = file.type.startsWith('image/');
+        if (!isVideo && !isImage) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const dataUrl = e.target.result;
+
+            // Show preview
+            uploadPreview.classList.remove('hidden');
+            uploadPreview.innerHTML = isVideo
+                ? `<video src="${dataUrl}" muted autoplay loop style="width:100%;height:160px;object-fit:cover;display:block;"></video>
+                   <div class="upload-preview-label"><i class="fas fa-film"></i> Video ready</div>`
+                : `<img src="${dataUrl}" style="width:100%;height:160px;object-fit:cover;display:block;">
+                   <div class="upload-preview-label"><i class="fas fa-image"></i> Image ready</div>`;
+
+            applyWallpaper({
+                type: isVideo ? 'upload-video' : 'upload-image',
+                value: dataUrl
+            });
+            setTimeout(() => closeModal(), 800);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    if (imageInput) imageInput.addEventListener('change', () => handleUploadedFile(imageInput.files[0]));
+    if (videoInput) videoInput.addEventListener('change', () => handleUploadedFile(videoInput.files[0]));
+
+    // Drag & drop
+    if (dropZone) {
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            handleUploadedFile(e.dataTransfer.files[0]);
+        });
+    }
 
     async function searchPhotos(q) {
         uGrid.innerHTML = '<p class="wp-hint">Loading...</p>';
@@ -718,39 +799,291 @@ setInterval(() => { const c = lsGet('dashboard-city', null); if (c) fetchWeather
     });
 })();
 
-// ─── SPOTIFY ──────────────────────────────────────────────
+// ─── MUSIC PLAYER (Spotify + YouTube + YT Music) ─────────
 (function () {
-    const iframe = document.getElementById('spotify-iframe');
-    const input  = document.getElementById('spotify-url-input');
-    const btn    = document.getElementById('spotify-set-btn');
-    if (!iframe || !input || !btn) return;
+    const iframe    = document.getElementById('music-iframe');
+    const input     = document.getElementById('music-url-input');
+    const setBtn    = document.getElementById('music-set-btn');
+    const tabs      = document.querySelectorAll('.music-tab');
+    if (!iframe || !input || !setBtn) return;
 
-    function toEmbed(raw) {
+    const PLACEHOLDERS = {
+        spotify: 'Paste your Spotify playlist or track link...',
+        youtube: 'Paste a YouTube video or playlist URL...',
+        ytmusic: 'Paste a YouTube Music link...',
+    };
+
+    const IFRAME_HEIGHTS = {
+        spotify: '352',
+        youtube: '250',
+        ytmusic: '250',
+    };
+
+    let activePlayer = lsGet('dashboard-music-player', 'spotify');
+
+    // ── Convert any URL to embed URL ──
+    function toEmbedUrl(raw, player) {
         try {
-            const url = new URL(raw.trim());
-            if (url.pathname.startsWith('/embed/')) return raw.trim();
-            return `https://open.spotify.com/embed${url.pathname}?utm_source=generator`;
+            raw = raw.trim();
+
+            if (player === 'spotify') {
+                const url = new URL(raw);
+                if (url.pathname.startsWith('/embed/')) return raw;
+                return `https://open.spotify.com/embed${url.pathname}?utm_source=generator`;
+            }
+
+            // YT Music — open in new tab, can't reliably embed
+            if (player === 'ytmusic') {
+                window.open(raw, '_blank');
+                return 'open-tab';
+            }
+
+            if (player === 'youtube') {
+                let videoId = null;
+                let listId  = null;
+
+                if (raw.includes('youtu.be/')) {
+                    videoId = raw.split('youtu.be/')[1].split(/[?&#]/)[0];
+                } else if (raw.includes('/shorts/')) {
+                    videoId = raw.split('/shorts/')[1].split(/[?&#]/)[0];
+                } else if (raw.includes('studio.youtube.com')) {
+                    window.open(raw, '_blank');
+                    return 'open-tab';
+                } else {
+                    const url = new URL(raw);
+                    videoId = url.searchParams.get('v');
+                    listId  = url.searchParams.get('list');
+                }
+
+                if (listId && videoId) return `https://www.youtube.com/embed/${videoId}?list=${listId}&rel=0`;
+                if (listId)           return `https://www.youtube.com/embed/videoseries?list=${listId}&rel=0`;
+                if (videoId)          return `https://www.youtube.com/embed/${videoId}?rel=0`;
+
+                return null;
+            }
         } catch { return null; }
+        return null;
     }
 
-    function applyPlaylist(url) { iframe.style.display = 'block'; iframe.src = url; lsSet('dashboard-spotify', url); }
+    // ── Apply a player ──
+    function applyPlayer(embedUrl, player) {
+        iframe.src = embedUrl;
+        iframe.height = IFRAME_HEIGHTS[player];
+        iframe.style.display = 'block';
+        lsSet('dashboard-music-' + player, embedUrl);
+    }
 
-    const saved = lsGet('dashboard-spotify', null);
-    if (saved) applyPlaylist(saved);
-    else { iframe.style.display = 'none'; input.placeholder = 'Paste your Spotify playlist link to get started...'; }
+    // ── Switch tab ──
+    function switchTab(player) {
+        activePlayer = player;
+        lsSet('dashboard-music-player', player);
 
-    btn.addEventListener('click', () => {
-        const url = toEmbed(input.value);
-        if (!url) { input.style.borderColor = '#f87171'; setTimeout(() => input.style.borderColor = '', 1500); return; }
-        applyPlaylist(url);
-        input.value = '';
-        input.placeholder = 'Playlist updated! ✓';
-        setTimeout(() => input.placeholder = 'Paste your Spotify playlist link...', 3000);
+        tabs.forEach(t => t.classList.toggle('active', t.dataset.player === player));
+        input.placeholder = PLACEHOLDERS[player];
+
+        // Load saved URL for this player
+        const saved = lsGet('dashboard-music-' + player, null);
+        if (saved) {
+            applyPlayer(saved, player);
+        } else {
+            iframe.style.display = 'none';
+            iframe.src = '';
+        }
+    }
+
+    // Init tabs
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => switchTab(tab.dataset.player));
     });
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') btn.click(); });
+
+    // Init with saved player
+    switchTab(activePlayer);
+
+    // Set button
+    setBtn.addEventListener('click', () => {
+        const raw = input.value.trim();
+        if (!raw) return;
+        const embedUrl = toEmbedUrl(raw, activePlayer);
+        if (embedUrl === null && raw.includes('studio.youtube.com')) {
+            // Already opened in new tab by toEmbedUrl
+            input.value = '';
+            showToast('YouTube Studio opened in new tab 🎬', 'fa-external-link-alt');
+            return;
+        }
+        if (!embedUrl) {
+            input.style.borderColor = '#f87171';
+            setTimeout(() => input.style.borderColor = '', 1500);
+            showToast('Invalid URL — try a video, playlist or Shorts link', 'fa-circle-xmark');
+            return;
+        }
+        applyPlayer(embedUrl, activePlayer);
+        input.value = '';
+        input.placeholder = '✓ Player updated!';
+        setTimeout(() => input.placeholder = PLACEHOLDERS[activePlayer], 3000);
+    });
+
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') setBtn.click(); });
 })();
 
-// ─── SERVICE WORKER ───────────────────────────────────────
+// ─── TIME TRACKER SIDEBAR ─────────────────────────────────
+(function () {
+    const sidebar     = document.getElementById('tracker-sidebar');
+    const overlay     = document.getElementById('tracker-overlay');
+    const openBtn     = document.getElementById('tracker-btn');
+    const closeBtn    = document.getElementById('tracker-close');
+    const totalEl     = document.getElementById('tracker-total');
+    const streakEl    = document.getElementById('tracker-streak');
+    const sitesEl     = document.getElementById('tracker-sites');
+    const listEl      = document.getElementById('tracker-list');
+    const dateSelect  = document.getElementById('tracker-date-select');
+    if (!sidebar) return;
+
+    // Only works in Chrome extension context
+    const isExtension = typeof chrome !== 'undefined' && chrome.storage;
+
+    function formatTime(seconds) {
+        if (seconds < 60)   return `${seconds}s`;
+        if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        return m > 0 ? `${h}h ${m}m` : `${h}h`;
+    }
+
+    function getTodayKey() {
+        const d = new Date();
+        return `track_${d.getFullYear()}_${d.getMonth() + 1}_${d.getDate()}`;
+    }
+
+    function getKeyForDate(date) {
+        return `track_${date.getFullYear()}_${date.getMonth() + 1}_${date.getDate()}`;
+    }
+
+    function getDateLabel(key) {
+        const parts = key.replace('track_', '').split('_');
+        const d = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+        const today     = new Date();
+        const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+        if (d.toDateString() === today.toDateString())     return 'Today';
+        if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    async function loadDateOptions() {
+        if (!isExtension) return;
+        const all = await chrome.storage.local.get(null);
+        const keys = Object.keys(all).filter(k => k.startsWith('track_')).sort().reverse();
+        dateSelect.innerHTML = '';
+        if (!keys.includes(getTodayKey())) keys.unshift(getTodayKey());
+        keys.forEach(key => {
+            const opt = document.createElement('option');
+            opt.value = key;
+            opt.textContent = getDateLabel(key);
+            dateSelect.appendChild(opt);
+        });
+    }
+
+    async function renderData(key) {
+        if (!isExtension) {
+            listEl.innerHTML = `<p class="tracker-empty">Time tracking only works in the Chrome Extension. Install it to track your browsing! 🚀</p>`;
+            return;
+        }
+
+        const result = await chrome.storage.local.get([key, 'streak_data']);
+        const data   = result[key] || {};
+        const streak = result.streak_data || { count: 0 };
+
+        // Sort by time
+        const sorted = Object.entries(data).sort((a, b) => b[1].seconds - a[1].seconds);
+        const total  = sorted.reduce((s, [, v]) => s + v.seconds, 0);
+
+        totalEl.textContent  = formatTime(total);
+        streakEl.textContent = streak.count + ' 🔥';
+        sitesEl.textContent  = sorted.length;
+
+        if (!sorted.length) {
+            listEl.innerHTML = `<p class="tracker-empty">No browsing data for this day yet.</p>`;
+            return;
+        }
+
+        const maxSec = sorted[0][1].seconds;
+        listEl.innerHTML = '';
+
+        sorted.forEach(([host, info], i) => {
+            const pct  = Math.round((info.seconds / maxSec) * 100);
+            const item = document.createElement('div');
+            item.className = 'tracker-item';
+            item.innerHTML = `
+                <span class="tracker-item-rank">${i + 1}</span>
+                ${info.favicon
+                    ? `<img class="tracker-favicon" src="${info.favicon}" alt="${host}" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">`
+                    : ''}
+                <div class="tracker-favicon-fallback" style="${info.favicon ? 'display:none' : ''}">
+                    <i class="fas fa-globe"></i>
+                </div>
+                <div class="tracker-item-info">
+                    <div class="tracker-item-host">${host}</div>
+                    <div class="tracker-item-bar-wrap">
+                        <div class="tracker-item-bar" style="width:${pct}%"></div>
+                    </div>
+                </div>
+                <span class="tracker-item-time">${formatTime(info.seconds)}</span>
+            `;
+            listEl.appendChild(item);
+        });
+    }
+
+    function openSidebar() {
+        sidebar.classList.add('open');
+        overlay.classList.add('active');
+        openBtn.classList.add('active');
+        loadDateOptions().then(() => renderData(dateSelect.value || getTodayKey()));
+    }
+
+    function closeSidebar() {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
+        openBtn.classList.remove('active');
+    }
+
+    openBtn.addEventListener('click', openSidebar);
+    closeBtn.addEventListener('click', closeSidebar);
+    overlay.addEventListener('click', closeSidebar);
+    dateSelect.addEventListener('change', () => renderData(dateSelect.value));
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSidebar(); });
+})();
+
+// ─── VIDEO WALLPAPER AUDIO TOGGLE ─────────────────────────
+(function () {
+    const videoBg = document.getElementById('video-bg');
+    if (!videoBg) return;
+
+    // Create mute toggle button (only shown when video is active)
+    const muteBtn = document.createElement('button');
+    muteBtn.id = 'video-mute-btn';
+    muteBtn.className = 'glass-btn video-mute-btn';
+    muteBtn.innerHTML = '<i class="fas fa-volume-xmark"></i>';
+    muteBtn.title = 'Unmute video';
+    muteBtn.style.display = 'none';
+    document.body.appendChild(muteBtn);
+
+    let muted = true;
+    videoBg.muted = true;
+
+    muteBtn.addEventListener('click', () => {
+        muted = !muted;
+        videoBg.muted = muted;
+        muteBtn.innerHTML = muted
+            ? '<i class="fas fa-volume-xmark"></i>'
+            : '<i class="fas fa-volume-high"></i>';
+        muteBtn.title = muted ? 'Unmute video' : 'Mute video';
+    });
+
+    // Show/hide mute button based on video visibility
+    const observer = new MutationObserver(() => {
+        muteBtn.style.display = videoBg.style.display === 'none' ? 'none' : 'flex';
+    });
+    observer.observe(videoBg, { attributes: true, attributeFilter: ['style'] });
+})();
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./service-worker.js')
